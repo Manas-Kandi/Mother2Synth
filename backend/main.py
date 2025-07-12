@@ -1,3 +1,8 @@
+import google.generativeai as genai
+genai.configure(api_key="AIzaSyBLv7dA4tI0bZGo6DXGAQA1_-fKRqnieYc")  # ⬅️ Replace this with your real key
+
+gemini_model = genai.GenerativeModel("gemini-pro")
+
 import os
 import shutil
 from fastapi import FastAPI, UploadFile, File
@@ -5,6 +10,27 @@ from fastapi.middleware.cors import CORSMiddleware
 import fitz  # PyMuPDF
 
 UPLOAD_DIR = "uploads"
+
+LLM_PROMPT = """
+You are a transcript normalizer.
+
+You will be given a raw UX research transcript that may include broken formatting, inconsistent speaker labels, and noisy boilerplate text (e.g., headers or page numbers).
+
+Your job is to return a clean, readable transcript. Keep speaker labels clear. If you need to infer a speaker label, include “[inferred]” after it.
+
+If anything is unreadable, mark it with “[unintelligible]”. Do not hallucinate.
+
+Here is the raw transcript:
+---
+{raw_text}
+---
+Return only the cleaned transcript.
+"""
+
+def run_llm_normalizer(raw_text: str) -> str:
+    prompt = LLM_PROMPT.replace("{raw_text}", raw_text)
+    response = gemini_model.generate_content(prompt)
+    return response.text.strip()
 
 # 🔁 Reset uploads/ folder on server start
 #if os.path.exists(UPLOAD_DIR):
