@@ -40,3 +40,18 @@
 .read-the-docs {
   color: #888;
 }
+
+.drop-zone {
+  height: 300px;
+  width: 100%;
+  max-width: 600px;
+  border: 2px dashed #999;
+  border-radius: 8px;
+  margin: 100px auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: sans-serif;
+  color: #fff;
+}
