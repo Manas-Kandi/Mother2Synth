@@ -1,22 +1,42 @@
 import { useState } from 'react';
 
 function App() {
-  const [fileNames, setFileNames] = useState([]);
+  const [pdfFiles, setPdfFiles] = useState([]);
+  const [responseMessage, setResponseMessage] = useState(null);
 
   const handleFiles = (files) => {
-    const validPdfs = Array.from(files).filter(file => file.type === 'application/pdf');
-
-    if (validPdfs.length === 0) {
-      alert('Please upload at least one PDF file.');
-      return;
-    }
-
-    const newNames = validPdfs.map(file => file.name);
-    setFileNames(prev => [...prev, ...newNames]);
+    const validPdfs = Array.from(files).filter(f => f.type === 'application/pdf');
+    setPdfFiles(validPdfs);
   };
 
   const handleChange = (e) => {
     handleFiles(e.target.files);
+  };
+
+  const uploadFiles = async () => {
+    if (pdfFiles.length === 0) {
+      alert("No files selected.");
+      return;
+    }
+
+    const formData = new FormData();
+    pdfFiles.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    try {
+      const res = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      console.log("Server response:", data);
+      setResponseMessage(data.message);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Something went wrong during upload.");
+    }
   };
 
   return (
@@ -24,18 +44,26 @@ function App() {
       <input
         type="file"
         accept="application/pdf"
-        onChange={handleChange}
         multiple
+        onChange={handleChange}
       />
-      {fileNames.length > 0 && (
-        <div style={{ marginTop: '1rem' }}>
-          <p>Uploaded PDFs:</p>
-          <ul>
-            {fileNames.map((name, index) => (
-              <li key={index}>{name}</li>
+      {pdfFiles.length > 0 && (
+        <>
+          <ul style={{ marginTop: '1rem' }}>
+            {pdfFiles.map((f, i) => (
+              <li key={i}>{f.name}</li>
             ))}
           </ul>
-        </div>
+          <button
+            onClick={uploadFiles}
+            style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}
+          >
+            Upload PDFs
+          </button>
+        </>
+      )}
+      {responseMessage && (
+        <p style={{ marginTop: '1rem', color: 'lightgreen' }}>{responseMessage}</p>
       )}
     </div>
   );
