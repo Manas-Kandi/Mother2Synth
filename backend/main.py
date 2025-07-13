@@ -58,36 +58,26 @@ def run_llm_normalizer(raw_text: str) -> str:
         return "[LLM error]"
 
 def run_llm_atomiser(clean_text: str) -> list[dict]:
-    prompt = f"""
-You are an "Idea Atomiser" working with cleaned UX research transcripts.
-
-Your job is to break the transcript into discrete **idea units**, or "atoms".
-
-Each atom must:
-- Be 1–3 sentences long
-- Be self-contained (understandable without additional context)
-- Include only one coherent thought or idea
-- Include the **speaker label**, preserved as given (e.g., "AJENA", "ERIC", or "SPEAKER 1")
-
-Guidelines:
-- Do not combine ideas from different speakers into one atom
-- If a speaker shifts topics, split that into multiple atoms
-- Retain any emotional tone or opinion expressed — it may be useful later
-- Avoid splitting mid-sentence unless absolutely necessary
-
-Output format: valid JSON list
-Each atom must be a JSON object like:
-{
-  "speaker": "AJENA",
-  "text": "I grew up in Roanoke and loved spending time outdoors with my brothers."
-}
-
-Here is the cleaned transcript:
----
-{clean_text}
----
-Return only a valid JSON list of atoms.
-"""
+    prompt = (
+        "You are an \"Idea Atomiser\" working with cleaned UX research transcripts.\n\n"
+        "Your job is to break the transcript into discrete **idea units**, or \"atoms\".\n\n"
+        "Each atom must:\n"
+        "- Be 1–3 sentences long\n"
+        "- Be self-contained (understandable without additional context)\n"
+        "- Include only one coherent thought or idea\n"
+        "- Include the **speaker label**, preserved as given (e.g., 'AJENA', 'ERIC', or 'SPEAKER 1')\n\n"
+        "Guidelines:\n"
+        "- Do not combine ideas from different speakers into one atom\n"
+        "- If a speaker shifts topics, split that into multiple atoms\n"
+        "- Retain any emotional tone or opinion expressed — it may be useful later\n"
+        "- Avoid splitting mid-sentence unless absolutely necessary\n\n"
+        "Output format: valid JSON list\n"
+        "Each atom must be a JSON object like:\n"
+        "{\n  \"speaker\": \"AJENA\",\n  \"text\": \"I grew up in Roanoke and loved spending time outdoors with my brothers.\"\n}\n\n"
+        "Here is the cleaned transcript:\n---\n"
+        f"{clean_text}\n---\n"
+        "Return only a valid JSON list of atoms."
+    )
 
     try:
         response = gemini_model.generate_content(prompt)
