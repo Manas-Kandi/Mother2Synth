@@ -13,19 +13,39 @@ import json
 UPLOAD_DIR = "uploads"
 
 LLM_PROMPT = """
-You are a transcript normalizer.
+You are a senior UX research assistant.
 
-You will be given a raw UX research transcript that may include broken formatting, inconsistent speaker labels, and noisy boilerplate text (e.g., headers or page numbers).
+You will be given raw transcript text extracted from a PDF. This text may include:
+- Page numbers, headers/footers, and other formatting artifacts
+- Broken sentences or poor line breaks
+- Missing or inconsistent speaker labels
+- Boilerplate content unrelated to the conversation
 
-Your job is to return a clean, readable transcript. Keep speaker labels clear. If you need to infer a speaker label, include “[inferred]” after it.
+Your task is to return a cleaned and structured transcript that is ready for downstream synthesis.
 
-If anything is unreadable, mark it with “[unintelligible]”. Do not hallucinate.
+Instructions:
+1. Remove noise such as page numbers, headers/footers, and irrelevant boilerplate.
+2. Repair formatting issues like broken lines or mid-sentence splits.
+3. Preserve speaker turns clearly. If speaker labels are inconsistent or missing:
+   - **Use conversational context to separate distinct speakers.**
+   - **Assign clearly differentiated pseudonyms**, like "Speaker 1", "Speaker 2", etc.
+   - If a real name is obvious (e.g. mentioned multiple times as self-introduction), use it instead.
+4. If a speaker is guessed, annotate with `[inferred]`.
+5. If part of the text is unreadable, mark it as `[unintelligible]`.
+6. **Do not hallucinate content** — your job is to clean and segment, not create new ideas.
+
+Format:
+- Output as plain text
+- Each paragraph should start with a speaker label, like:
+
+ERIC: I grew up in Pittsburgh. I loved fishing with my dad.
+AJENA [inferred]: That sounds peaceful. My family used to hike a lot.
 
 Here is the raw transcript:
 ---
 {raw_text}
 ---
-Return only the cleaned transcript.
+Return only the cleaned, speaker-separated transcript.
 """
 
 def run_llm_normalizer(raw_text: str) -> str:
@@ -39,40 +59,57 @@ def run_llm_normalizer(raw_text: str) -> str:
 
 def run_llm_atomiser(clean_text: str) -> list[dict]:
     prompt = f"""
-You are an "Idea Atomiser".
+You are an "Idea Atomiser" working with cleaned UX research transcripts.
 
-Your job is to break a cleaned UX research transcript into discrete idea units.
+Your job is to break the transcript into discrete **idea units**, or "atoms".
 
-Each unit should:
-- Be 1–3 sentences long.
-- Be self-contained.
-- Preserve the speaker label.
+Each atom must:
+- Be 1–3 sentences long
+- Be self-contained (understandable without additional context)
+- Include only one coherent thought or idea
+- Include the **speaker label**, preserved as given (e.g., "AJENA", "ERIC", or "SPEAKER 1")
 
-Respond in JSON format only — no explanation, no markdown, no backticks. Just the raw list.
+Guidelines:
+- Do not combine ideas from different speakers into one atom
+- If a speaker shifts topics, split that into multiple atoms
+- Retain any emotional tone or opinion expressed — it may be useful later
+- Avoid splitting mid-sentence unless absolutely necessary
+
+Output format: valid JSON list
+Each atom must be a JSON object like:
+{
+  "speaker": "AJENA",
+  "text": "I grew up in Roanoke and loved spending time outdoors with my brothers."
+}
 
 Here is the cleaned transcript:
 ---
 {clean_text}
 ---
-Return only valid JSON like this:
-
-[
-  {{ "speaker": "User", "text": "I had trouble using the app on my phone." }},
-  {{ "speaker": "Moderator", "text": "What did you expect to happen?" }}
-]
+Return only a valid JSON list of atoms.
 """
 
     try:
         response = gemini_model.generate_content(prompt)
         raw = response.text.strip()
 
-        # Try parsing JSON safely
+        # Remove Markdown-style code fences if present
+        if raw.startswith("```"):
+            raw = raw.split("```")[1].strip()
+
         atoms = json.loads(raw)
         return atoms
     except Exception as e:
         print("Failed to parse LLM response:", e)
         print("Raw response was:\n", response.text)
         return []
+
+def extract_text_from_pdf(pdf_path: str) -> str:
+    doc = fitz.open(pdf_path)
+    full_text = ""
+    for page in doc:
+        full_text += page.get_text() + "\n"
+    return full_text
 
 # 🔁 Reset uploads/ folder on server start
 #if os.path.exists(UPLOAD_DIR):
@@ -113,13 +150,7 @@ async def normalize_files():
             continue
 
         pdf_path = os.path.join(upload_dir, filename)
-        doc = fitz.open(pdf_path)
-        full_text = ""
-
-        for page in doc:
-            page_text = page.get_text()
-            full_text += page_text + "\n"
-
+        full_text = extract_text_from_pdf(pdf_path)
         cleaned = clean_transcript(full_text)
         cleaned_text = run_llm_normalizer(cleaned)
         print(f"---\nNormalized output for {filename}:\n{cleaned_text}\n---")
@@ -138,18 +169,11 @@ async def atomise_files():
             continue
 
         pdf_path = os.path.join(upload_dir, filename)
-        doc = fitz.open(pdf_path)
-        full_text = ""
-
-        for page in doc:
-            full_text += page.get_text() + "\n"
-
+        full_text = extract_text_from_pdf(pdf_path)
         # Step 1: Normalize the text
         clean_text = run_llm_normalizer(full_text)
-
         # Step 2: Atomise the clean text
         atoms = run_llm_atomiser(clean_text)
-
         atomised_output[filename] = atoms
 
     return atomised_output
