@@ -3,6 +3,8 @@ import { useState } from 'react';
 function App() {
   const [pdfFiles, setPdfFiles] = useState([]);
   const [responseMessage, setResponseMessage] = useState(null);
+  const [atoms, setAtoms] = useState([]);
+  const [atomFile, setAtomFile] = useState(null); // for saving atoms.json
 
   const handleFiles = (files) => {
     const validPdfs = Array.from(files).filter(f => f.type === 'application/pdf');
@@ -31,11 +33,27 @@ function App() {
       });
 
       const data = await res.json();
-      console.log("Server response:", data);
       setResponseMessage(data.message);
+      // Chain GET /atomise after upload
+      fetchAtoms();
     } catch (err) {
       console.error("Upload failed:", err);
       alert("Something went wrong during upload.");
+    }
+  };
+
+  const fetchAtoms = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/atomise");
+      const data = await res.json();
+      // Flatten all atoms from all files into a single array for display
+      const allAtoms = Object.values(data).flat();
+      setAtoms(allAtoms);
+      // Save atoms.json for next agents
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      setAtomFile(window.URL.createObjectURL(blob));
+    } catch (err) {
+      console.error("Failed to fetch atomised data:", err);
     }
   };
 
@@ -64,6 +82,21 @@ function App() {
       )}
       {responseMessage && (
         <p style={{ marginTop: '1rem', color: 'lightgreen' }}>{responseMessage}</p>
+      )}
+      {atoms.length > 0 && (
+        <div style={{ marginTop: '2rem' }}>
+          <h3>Atomised Ideas</h3>
+          {atoms.map((atom, i) => (
+            <div key={i} className="mb-4 p-2 border rounded" style={{ background: '#222', marginBottom: '1rem', padding: '1rem', borderRadius: '8px', border: '1px solid #444' }}>
+              <strong>{atom.speaker}:</strong> {atom.text}
+            </div>
+          ))}
+          {atomFile && (
+            <a href={atomFile} download="atoms.json" style={{ color: '#0ff', textDecoration: 'underline' }}>
+              Download atoms.json
+            </a>
+          )}
+        </div>
       )}
     </div>
   );
