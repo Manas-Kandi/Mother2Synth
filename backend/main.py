@@ -233,45 +233,94 @@ def clean_transcript(raw_text: str) -> str:
     return "\n".join(cleaned)
 
 GRAPH_BUILDER_PROMPT = """
-You are a research-graph builder.
+You are an **evidence-synthesis architect**.  
+You read every atom, then **build a living knowledge graph** that a UX researcher can query, remix, and evolve.
 
 INPUT  
-List of annotated atoms (each contains: id, speaker, text, speech_act, sentiment, …).
+List of annotated atoms (each already contains id, speaker, text, speech_act, sentiment, etc.).
 
-TASK  
-Return a lightweight graph:
+OUTPUT  
+A single JSON object with four top-level keys:
 
-1. NODES  
-   Each node = atom metadata:  
-   {"id": <uuid>, "speaker": ..., "text": ..., "sentiment": ..., "speech_act": ...}
+1. nodes  
+   Same atoms as before, but enriched with **entity arrays** (see below).
 
-2. EDGES  
-   One edge per pair of atoms that share **at least one** explicit commonality in:  
-   - mentioned **object** (e.g., “password field”, “reset email”)  
-   - **task** (e.g., “login”, “fill form”)  
-   - **emotion** (e.g., “frustration”, “surprise”)  
+2. edges  
+   Links between nodes that share **objects, tasks, emotions, personas, or journey steps**.
 
-   Edge object:  
-   {"source": <atom_id>, "target": <atom_id>, "type": "object|task|emotion", "label": "shared_value"}
+3. meta  
+   High-level **insights** (personas, pain clusters, journey map) distilled from the entire set.
 
-RULES  
-- Only create edges when the commonality is **explicit** in the text.  
-- Keep labels concise (≤15 chars).  
-- Output **strict JSON** with keys: nodes, edges.
+4. facets  
+   User-defined, open schema facets (device, channel, cost, etc.) discovered in-text.
 
-EXAMPLE  
-[{"id":"a1","speaker":"P","text":"I wait for the reset email","sentiment":"negative"}, …]
+----------------------------------------------------
+DETAILED SCHEMA
+----------------------------------------------------
+nodes: [
+  {
+    "id": "...",
+    "speaker": "...",
+    "text": "...",
+    "speech_act": "...",
+    "sentiment": "...",
+    "entities": {
+      "objects": ["password field", "reset email"],
+      "tasks": ["login", "fill form"],
+      "emotions": ["frustration"],
+      "personas": ["mobile user"],
+      "journey_step": "reset attempt"
+    }
+  }
+]
 
-→  
-{"nodes":[...],"edges":[{"source":"a1","target":"a2","type":"task","label":"reset"}]}
+edges: [
+  {
+    "source": "node_id",
+    "target": "node_id",
+    "type": "shared_object|shared_task|shared_emotion|shared_persona|journey_flow",
+    "label": "concise label ≤15 chars"
+  }
+]
+
+meta: {
+  "personas": ["frustrated mobile user", "admin"],
+  "pain_clusters": ["login friction", "missing autosave"],
+  "journey_map": [
+    {"step": "login attempt", "sentiment": "negative", "atoms": ["a1","a3"]},
+    {"step": "reset attempt", "sentiment": "negative", "atoms": ["a4","a5"]}
+  ],
+  "top_objects": ["password field", "reset email", "form"],
+  "top_tasks": ["login", "reset"]
+}
+
+facets: {
+  "device": ["desktop", "mobile"],
+  "channel": ["app", "website"],
+  "cost": ["free", "paid"],
+  "frequency": ["daily", "weekly"]
+}
+----------------------------------------------------
+RULES
+----------------------------------------------------
+1. **Extract entities verbatim**; no paraphrasing.  
+2. **Only create edges when commonality is explicit** in text.  
+3. **Keep labels concise** (≤15 chars).  
+4. **Meta insights must be evidence-backed** (reference atom IDs in `journey_map`).  
+5. **Facets are optional**; omit if absent.  
+6. **Return strict JSON** with keys: nodes, edges, meta, facets.
+
+EXAMPLE INPUT  
+[{"id":"a1","speaker":"Speaker 1","text":"I wait for the reset email","sentiment":"negative"}]
+
+EXAMPLE OUTPUT  
+{"nodes":[...],"edges":[...],"meta":{...},"facets":{...}}
 """
 
 @app.post("/graph")
 async def build_graph(atoms: list[dict]):
-    # Guarantee UUIDs
     for atom in atoms:
         atom.setdefault("id", str(uuid4()))
-
     prompt = GRAPH_BUILDER_PROMPT.replace("{atoms}", json.dumps(atoms, ensure_ascii=False))
     try:
         response = gemini_model.generate_content(prompt)
@@ -279,7 +328,16 @@ async def build_graph(atoms: list[dict]):
         if raw.startswith("```json"):
             raw = raw.split("```", 1)[1].strip()
         graph = json.loads(raw)
+
+        # Add human-readable descriptions
+        graph["nodes_desc"] = "List of every atom with extracted entities."
+        graph["edges_desc"] = (
+            "Links between atoms that share an object, task, emotion, or persona. "
+            "Empty list means no explicit overlap was found."
+        )
+        if not graph.get("edges"):
+            graph["edges_note"] = "None of the atoms share explicit common entities."
         return graph
     except Exception as e:
         print("Graph builder error:", e)
-        return {"nodes": atoms, "edges": []}
+        return {"nodes": atoms, "edges": [], "meta": {}, "facets": {}}

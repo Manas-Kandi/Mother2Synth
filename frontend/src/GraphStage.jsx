@@ -19,6 +19,9 @@ export default function GraphStage({ graph }) {
             </li>
           ))}
         </ul>
+        {graph.edges.length === 0 && graph.edges_note && (
+          <p className="empty-note">{graph.edges_note}</p>
+        )}
       </div>
     </section>
   );
