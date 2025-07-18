@@ -1,27 +1,32 @@
 .transcript-stage {
   padding: 40px;
+  background: #0d0d0d;
+  height: 100%;
+  overflow: hidden;
   font-family: "Inter", sans-serif;
-  color: #ffffff;
-  background: #1a1a1a;
+  color: #eaeaea;
 }
 
-.transcript-content {
-  max-height: 600px;
+.transcript-scroll {
+  max-height: 80vh;
   overflow-y: auto;
+  padding-right: 1rem;
+  scrollbar-color: #333 #111;
 }
 
-.transcript-block {
-  margin-bottom: 20px;
+.speaker-block {
+  margin-bottom: 1.5rem;
 }
 
-.speaker {
-  font-weight: bold;
-  color: #00b8d4; /* Muted blue for speaker labels */
-  margin-bottom: 5px;
+.speaker-name {
+  font-weight: 600;
+  color: #0affff;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
 }
 
-.transcript-block p {
+.speaker-text {
+  font-size: 1rem;
+  line-height: 1.6;
   margin: 0;
-  font-size: 16px;
-  line-height: 1.5;
 }
