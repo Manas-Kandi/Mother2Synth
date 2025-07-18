@@ -1,5 +1,7 @@
 .annotations-stage {
-  padding: 40px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem;
   font-family: "Inter", sans-serif;
   color: #ffffff;
   background: #1a1a1a; /* Lighter background for contrast */
@@ -20,6 +22,7 @@
 }
 
 .annotation-card {
+  margin-bottom: 2rem;
   background: #18191b; /* Slightly darker background for each annotation */
   border-radius: 8px;
   padding: 16px;
@@ -34,9 +37,9 @@
 .annotation-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 14px; /* Slightly smaller font for the header */
-  color: #b3b3b3; /* Muted color for the header */
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+  color: var(--accent);
 }
 
 .speaker {
@@ -50,9 +53,11 @@
 }
 
 .annotation-tags {
-  margin-top: 8px;
-  font-size: 14px;
-  color: #b3b3b3;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
 }
 
 .tag {

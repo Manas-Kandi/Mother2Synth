@@ -1,5 +1,7 @@
 .graph-stage {
-  padding: 40px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem;
   font-family: "Inter", sans-serif;
   color: #ffffff;
   background: #1a1a1a;
@@ -14,17 +16,25 @@
 }
 
 .graph-stage h2 {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   font-size: 1.5rem;
   color: #0affff;
 }
 
 .graph-stage ul {
   list-style: none;
+  margin-bottom: 2rem;
   padding: 0;
 }
 
 .graph-stage li {
+  margin-bottom: 0.75rem;
   padding: 4px 0;
   font-size: 0.9rem;
+  color: var(--text);
+}
+
+.empty-note {
+  color: var(--muted);
+  font-style: italic;
 }

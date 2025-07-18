@@ -1,18 +1,13 @@
 .upload-wrapper {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #121212;
-  color: #e1e1e1;
-  padding: 4rem 2rem;
-  font-family: "Inter", sans-serif;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 2rem;
 }
 
 .upload-box {
+  max-width: 680px;
   text-align: center;
-  max-width: 500px;
-  width: 100%;
 }
 
 .upload-box h1 {
@@ -30,18 +25,16 @@
 
 .upload-area {
   display: block;
-  padding: 2rem;
-  border: 2px dashed #333;
-  border-radius: 12px;
-  background: #181818;
-  color: #999;
-  cursor: pointer;
-  transition: border-color 0.2s ease;
+  margin: 2rem 0;
+  padding: 3rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  transition: border-color 0.15s;
 }
 
 .upload-area:hover {
-  border-color: #0affff;
-  color: #0affff;
+  border-color: var(--accent);
 }
 
 input[type="file"] {
@@ -49,78 +42,37 @@ input[type="file"] {
 }
 
 .status-message {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
+  color: var(--muted);
   font-size: 0.9rem;
-  color: #a1a1a1;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.status-message .dot {
-  width: 6px;
-  height: 6px;
-  background: #0affff;
-  border-radius: 50%;
-  animation: pulse 1.2s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.2;
-    transform: scale(0.9);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.2);
-  }
 }
 
 .project-list {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 2rem;
-  max-width: 400px;
+  text-align: left;
+  margin: 2rem 0;
 }
 
 .project-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+  padding: 0.75rem 0;
 }
 
 .flags span {
-  margin-left: 0.5rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  color: #fff;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-right: 0.5rem;
 }
-.flags .done { background: #0aff99; }
-.flags .pending { background: #444; }
 
 .jump-link {
-  background: none;
-  border: none;
-  color: #0affff;
-  cursor: pointer;
+  color: var(--accent);
   font-weight: 600;
-  text-decoration: underline;
-}
-.jump-link:hover {
-  color: #fff;
 }
 
 .delete-btn {
-  background: none;
-  border: none;
-  color: #ff4d4d;
-  cursor: pointer;
-  padding: 2px;
-  margin-left: auto;
-}
-.delete-btn:hover {
-  color: #ff0000;
+  color: var(--error);
+  font-size: 0.9rem;
 }

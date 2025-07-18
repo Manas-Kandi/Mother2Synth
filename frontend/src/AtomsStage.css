@@ -1,8 +1,7 @@
 .atoms-stage {
-  padding: 40px;
-  font-family: "Inter", sans-serif;
-  color: #ffffff;
-  background: #1a1a1a; /* Lighter background for contrast */
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
 .atoms-container {
@@ -27,6 +26,7 @@
   transition:
     transform 0.2s ease-in-out,
     box-shadow 0.2s ease-in-out; /* Smooth transitions */
+  margin-bottom: 2rem;
 }
 
 .atom-card:hover {
@@ -40,6 +40,9 @@
   margin-bottom: 8px;
   font-size: 14px; /* Slightly smaller font for the header */
   color: #b3b3b3; /* Muted color for the header */
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
 }
 
 .speaker {

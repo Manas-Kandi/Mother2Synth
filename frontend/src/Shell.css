@@ -12,28 +12,23 @@
 .shell {
   display: flex;
   height: 100vh;
-  background: var(--bg);
-  font-family: "Inter", system-ui, sans-serif;
 }
 
-/* Rail */
 .rail {
-  width: 220px;
-  background: var(--surface);
+  width: 200px;
+  padding: 2rem 1.5rem;
   display: flex;
   flex-direction: column;
-  padding: 40px 24px;
-  gap: 28px;
+  gap: 1.5rem;
+  border-right: 1px solid var(--border);
 }
 
 .step {
-  all: unset;
   display: flex;
   align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  color: var(--text-secondary);
-  transition: color 120ms var(--ease);
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 
 .step:hover {
@@ -52,9 +47,10 @@
 
 /* State dots */
 .dot {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
+  background: var(--muted);
   flex-shrink: 0;
 }
 
