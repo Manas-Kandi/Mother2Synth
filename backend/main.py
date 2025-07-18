@@ -169,6 +169,47 @@ async def atomise_files():
     return atomised_output
 
 
+ANNOTATOR_PROMPT = """
+You are a precise tagging assistant.  
+Given an idea atom from a UX-research transcript, return ONLY a JSON object with two keys:
+
+- speech_act: pick the single best label from [statement, question, command, complaint, praise, confession, idea, clarification]
+- sentiment: pick the single best label from [positive, neutral, negative, mixed]
+
+Atom:
+{atom_text}
+
+Return only the JSON object, no extra text.
+"""
+
+def annotate_atom(text: str) -> dict:
+    prompt = ANNOTATOR_PROMPT.replace("{atom_text}", text)
+    try:
+        response = gemini_model.generate_content(prompt)
+        raw = response.text.strip()
+        # print("DEBUG Raw Gemini ->", repr(raw))          # will show in uvicorn console
+
+        # --- bullet-proof JSON extraction ---
+        import re, json
+        # grab first {...}
+        m = re.search(r'\{.*?\}', raw, re.DOTALL)
+        if not m:
+            raise ValueError("No JSON object found")
+        payload = json.loads(m.group(0))
+        return {"speech_act": payload.get("speech_act", "UNKNOWN"),
+                "sentiment": payload.get("sentiment", "UNKNOWN")}
+    except Exception as e:
+        print("annotate_atom error:", e)
+        return {"speech_act": "UNKNOWN", "sentiment": "UNKNOWN"}
+
+@app.post("/annotate")
+async def annotate_atoms(atoms: list[dict]):
+    enriched = []
+    for atom in atoms:
+        tags = annotate_atom(atom["text"])
+        enriched.append({**atom, **tags})
+    return enriched
+
 def clean_transcript(raw_text: str) -> str:
     lines = raw_text.splitlines()
     cleaned = []
