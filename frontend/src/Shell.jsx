@@ -4,12 +4,14 @@ import TranscriptStage from "./TranscriptStage";
 import AtomsStage from "./AtomsStage";
 import AnnotatedAtomsStage from "./AnnotatedAtomsStage";
 import UploadStage from "./UploadStage";
+import GraphStage from "./GraphStage";
 
 export default function Shell() {
-  const [active, setActive] = useState(-1); // -1: Upload, 0: Transcript, 1: Atoms, 2: Annotations
+  const [active, setActive] = useState(-1); // -1: Upload, 0: Transcript, 1: Atoms, 2: Annotations, 3: Graph
   const [cleaned, setCleaned] = useState("");
   const [atoms, setAtoms] = useState([]);
   const [annotated, setAnnotated] = useState([]);
+  const [graph, setGraph] = useState({ nodes: [], edges: [] });
   const [statusMessage, setStatusMessage] = useState("");
 
   const stages = [
@@ -17,6 +19,7 @@ export default function Shell() {
     { id: 0, label: "Transcript", state: "done" },
     { id: 1, label: "Atoms",      state: "done" },
     { id: 2, label: "Annotations",   state: "pending" },
+    { id: 3, label: "Graph",   state: "pending" },
   ];
 
   async function handleFiles(files) {
@@ -40,6 +43,15 @@ export default function Shell() {
       })
     ).json();
     setAnnotated(annotatedRes);
+    setStatusMessage("Building graph…");
+    const graphRes = await (
+      await fetch("http://localhost:8000/graph", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(annotatedRes),
+      })
+    ).json();
+    setGraph(graphRes);
     setStatusMessage("Done. Ready to view.");
     setActive(0);
   }
@@ -63,12 +75,17 @@ export default function Shell() {
           <span className="dot pending"></span>
           <span className="label">Annotations</span>
         </button>
+        <button className={`step ${active === 3 ? "active" : ""}`} onClick={() => setActive(3)}>
+          <span className="dot pending">○</span>
+          <span className="label">Graph</span>
+        </button>
       </nav>
       <main className="stage">
         {active === -1 && <UploadStage onFiles={handleFiles} statusMessage={statusMessage} />}
         {active === 0 && <TranscriptStage transcript={cleaned} />}
         {active === 1 && <AtomsStage atoms={atoms} />}
         {active === 2 && <AnnotatedAtomsStage annotatedAtoms={annotated} />}
+        {active === 3 && <GraphStage graph={graph} />}
       </main>
     </div>
   );

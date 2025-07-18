@@ -11,6 +11,7 @@ import fitz  # PyMuPDF
 import json
 import re
 import time
+from uuid import uuid4
 
 UPLOAD_DIR = "uploads"
 
@@ -230,3 +231,55 @@ def clean_transcript(raw_text: str) -> str:
         cleaned.append(line)
 
     return "\n".join(cleaned)
+
+GRAPH_BUILDER_PROMPT = """
+You are a research-graph builder.
+
+INPUT  
+List of annotated atoms (each contains: id, speaker, text, speech_act, sentiment, …).
+
+TASK  
+Return a lightweight graph:
+
+1. NODES  
+   Each node = atom metadata:  
+   {"id": <uuid>, "speaker": ..., "text": ..., "sentiment": ..., "speech_act": ...}
+
+2. EDGES  
+   One edge per pair of atoms that share **at least one** explicit commonality in:  
+   - mentioned **object** (e.g., “password field”, “reset email”)  
+   - **task** (e.g., “login”, “fill form”)  
+   - **emotion** (e.g., “frustration”, “surprise”)  
+
+   Edge object:  
+   {"source": <atom_id>, "target": <atom_id>, "type": "object|task|emotion", "label": "shared_value"}
+
+RULES  
+- Only create edges when the commonality is **explicit** in the text.  
+- Keep labels concise (≤15 chars).  
+- Output **strict JSON** with keys: nodes, edges.
+
+EXAMPLE  
+[{"id":"a1","speaker":"P","text":"I wait for the reset email","sentiment":"negative"}, …]
+
+→  
+{"nodes":[...],"edges":[{"source":"a1","target":"a2","type":"task","label":"reset"}]}
+"""
+
+@app.post("/graph")
+async def build_graph(atoms: list[dict]):
+    # Guarantee UUIDs
+    for atom in atoms:
+        atom.setdefault("id", str(uuid4()))
+
+    prompt = GRAPH_BUILDER_PROMPT.replace("{atoms}", json.dumps(atoms, ensure_ascii=False))
+    try:
+        response = gemini_model.generate_content(prompt)
+        raw = response.text.strip()
+        if raw.startswith("```json"):
+            raw = raw.split("```", 1)[1].strip()
+        graph = json.loads(raw)
+        return graph
+    except Exception as e:
+        print("Graph builder error:", e)
+        return {"nodes": atoms, "edges": []}
