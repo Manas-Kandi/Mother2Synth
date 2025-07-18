@@ -9,6 +9,8 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import fitz  # PyMuPDF
 import json
+import re
+import time
 
 UPLOAD_DIR = "uploads"
 
@@ -71,28 +73,31 @@ def run_llm_atomiser(clean_text: str) -> list[dict]:
         "- If a speaker shifts topics, split that into multiple atoms\n"
         "- Retain any emotional tone or opinion expressed — it may be useful later\n"
         "- Avoid splitting mid-sentence unless absolutely necessary\n\n"
-        "Output format: valid JSON list\n"
-        "Each atom must be a JSON object like:\n"
-        "{\n  \"speaker\": \"AJENA\",\n  \"text\": \"I grew up in Roanoke and loved spending time outdoors with my brothers.\"\n}\n\n"
+        "Output ONLY a valid JSON list, no extra commentary.\n"
+        "Example:\n"
+        '[{"speaker": "ERIC", "text": "I grew up in Roanoke and loved spending time outdoors with my brothers."}]\n\n'
         "Here is the cleaned transcript:\n---\n"
-        f"{clean_text}\n---\n"
-        "Return only a valid JSON list of atoms."
+        f"{clean_text}\n---"
     )
 
     try:
         response = gemini_model.generate_content(prompt)
         raw = response.text.strip()
 
-        # Remove Markdown-style code fences if present
-        if raw.startswith("```"):
-            raw = raw.split("```")[1].strip()
+        # Remove Markdown fences if present
+        import re
+        raw = re.sub(r'```(?:json)?|```', '', raw).strip()
 
         atoms = json.loads(raw)
+        if not isinstance(atoms, list):
+            raise ValueError("Not a list")
         return atoms
     except Exception as e:
-        print("Failed to parse LLM response:", e)
-        print("Raw response was:\n", response.text)
-        return []
+        print("Atomiser failed:", e)
+        print("Raw response:", repr(raw))
+        return [
+            {"speaker": "ERROR", "text": f"[Atomiser failed: {e}]"}
+        ]  # non-empty so frontend shows the error
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     doc = fitz.open(pdf_path)
@@ -183,24 +188,23 @@ Return only the JSON object, no extra text.
 """
 
 def annotate_atom(text: str) -> dict:
-    prompt = ANNOTATOR_PROMPT.replace("{atom_text}", text)
+    prompt = (
+        "Tag only. Return JSON: {\"speech_act\":\"...\",\"sentiment\":\"...\"}\n"
+        "Allowed speech_act: statement,question,command,complaint,praise,confession,idea,clarification\n"
+        "Allowed sentiment: positive,neutral,negative,mixed\n\n"
+        f"Text: {text}"
+    )
     try:
-        response = gemini_model.generate_content(prompt)
+        response = gemini_model.generate_content(prompt, request_options={"timeout": 5000})  # 5 sec
         raw = response.text.strip()
-        # print("DEBUG Raw Gemini ->", repr(raw))          # will show in uvicorn console
-
-        # --- bullet-proof JSON extraction ---
-        import re, json
-        # grab first {...}
+        print("LLM raw ->", repr(raw))
         m = re.search(r'\{.*?\}', raw, re.DOTALL)
-        if not m:
-            raise ValueError("No JSON object found")
         payload = json.loads(m.group(0))
         return {"speech_act": payload.get("speech_act", "UNKNOWN"),
                 "sentiment": payload.get("sentiment", "UNKNOWN")}
     except Exception as e:
         print("annotate_atom error:", e)
-        return {"speech_act": "UNKNOWN", "sentiment": "UNKNOWN"}
+        return {"speech_act": "ERROR", "sentiment": "ERROR"}
 
 @app.post("/annotate")
 async def annotate_atoms(atoms: list[dict]):
