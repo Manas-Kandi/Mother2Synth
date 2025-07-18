@@ -1,0 +1,64 @@
+.annotations-stage {
+  padding: 40px;
+  font-family: "Inter", sans-serif;
+  color: #ffffff;
+  background: #1a1a1a; /* Lighter background for contrast */
+}
+
+.annotations-container {
+  height: 500px; /* Fixed height for the scrollable area */
+  overflow-y: auto; /* Enable vertical scrolling */
+  border-radius: 8px;
+  background: #1e1e1e; /* Darker background for the scrollable area */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+}
+
+.annotations-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* Gap between annotations */
+}
+
+.annotation-card {
+  background: #18191b; /* Slightly darker background for each annotation */
+  border-radius: 8px;
+  padding: 16px;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Smooth transitions */
+}
+
+.annotation-card:hover {
+  transform: translateY(-4px); /* Subtle lift on hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Enhanced shadow on hover */
+}
+
+.annotation-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px; /* Slightly smaller font for the header */
+  color: #b3b3b3; /* Muted color for the header */
+}
+
+.speaker {
+  font-weight: bold;
+}
+
+.annotation-text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.annotation-tags {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #b3b3b3;
+}
+
+.tag {
+  display: inline-block;
+  margin-right: 8px;
+  background: #2e2e2e; /* Darker background for tags */
+  padding: 4px 8px;
+  border-radius: 4px;
+}

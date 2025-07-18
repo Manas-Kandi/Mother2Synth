@@ -1,0 +1,72 @@
+.dashboard {
+  max-width: 720px;
+  margin: 2rem auto;
+  font-family: "Inter", system-ui, sans-serif;
+  background: #111;
+  color: #e5e5e5;
+  padding: 2rem;
+  border-radius: 12px;
+}
+
+.dashboard h1 {
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.card {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.card header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card header:hover {
+  background: #27272a;
+}
+
+.icon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.icon.done   { color: #22c55e; }
+.icon.running{ color: #f59e0b; animation: spin 1.5s linear infinite; }
+.icon.error  { color: #ef4444; }
+.icon.idle   { color: #52525b; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.chevron {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: #71717a;
+}
+
+pre {
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  background: #0a0a0a;
+  max-height: 320px;
+  overflow: auto;
+}

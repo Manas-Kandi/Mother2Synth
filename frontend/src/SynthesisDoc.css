@@ -1,0 +1,46 @@
+/* page canvas */
+.synth-doc {
+  max-width: 680px;
+  margin: 4rem auto;
+  padding: 0 24px;
+  font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 17px;
+  line-height: 1.68;
+  letter-spacing: -0.01em;
+  color: #e1e1e1;
+  background: #0d0d0d;
+}
+
+/* section dividers via white-space only */
+.synth-doc section + section {
+  margin-top: 4rem;
+}
+
+/* transcript speaker labels */
+.transcript p strong {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.transcript p + p {
+  margin-top: 1.25rem;
+}
+
+/* atoms – generous breathing room */
+.atoms p + p {
+  margin-top: 2.2rem;
+}
+
+/* annotated atoms */
+.annotated-unit p {
+  margin: 0;
+}
+
+.annotated-unit aside {
+  font-size: 0.78em;
+  line-height: 1.4;
+  color: #7c7c7c;
+  margin-top: 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

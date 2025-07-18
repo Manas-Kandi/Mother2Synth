@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
+import "./PipelineDashboard.css";
+import SynthesisDoc from "./SynthesisDoc";
 
 export default function PipelineDashboard({ files }) {
-  const [status, setStatus] = useState({}); // { step: "idle|running|done|error", data: … }
+  const [status, setStatus] = useState({}); // { step, state, data }
+  const [expanded, setExpanded] = useState(null);
 
   useEffect(() => {
     if (!files || !files.length) return;
@@ -38,6 +41,23 @@ export default function PipelineDashboard({ files }) {
     })();
   }, [files]);
 
+  // If all steps are done, show the SynthesisDoc view for the first file
+  const fileKey = files[0]?.name;
+  if (
+    status.normalize?.data?.[fileKey] &&
+    status.atomise?.data?.[fileKey] &&
+    status.annotate?.data
+  ) {
+    return (
+      <SynthesisDoc
+        cleaned={status.normalize.data[fileKey] || ""}
+        atoms={status.atomise.data[fileKey] || []}
+        annotated={status.annotate.data || []}
+      />
+    );
+  }
+
+  // Otherwise, show the pipeline dashboard
   const steps = ["upload", "normalize", "atomise", "annotate"];
   const labels = {
     upload: "Upload PDFs",
@@ -47,27 +67,30 @@ export default function PipelineDashboard({ files }) {
   };
 
   return (
-    <div style={{ padding: 24, fontFamily: "system-ui" }}>
-      <h2>Pipeline Progress</h2>
+    <div className="dashboard">
+      <h1>Pipeline</h1>
       {steps.map(step => (
-        <details key={step} open={status.step === step}>
-          <summary>
-            <StatusBadge state={status[step]?.state} /> {labels[step]}
-          </summary>
-          {status[step]?.state === "done" && (
-            <pre style={{ fontSize: 12, maxHeight: 200, overflow: "auto" }}>
+        <section key={step} className="card">
+          <header onClick={() => setExpanded(exp => (exp === step ? null : step))}>
+            <StatusIcon state={status[step]?.state} />
+            <span>{labels[step]}</span>
+            <span className="chevron">{expanded === step ? "▲" : "▼"}</span>
+          </header>
+
+          {expanded === step && status[step]?.state === "done" && (
+            <pre>
               {JSON.stringify(status[step].data, null, 2)}
             </pre>
           )}
-        </details>
+        </section>
       ))}
     </div>
   );
 }
 
-function StatusBadge({ state }) {
-  if (state === "done") return <span style={{ color: "lime" }}>✅</span>;
-  if (state === "running") return <span style={{ color: "orange" }}>⏳</span>;
-  if (state === "error") return <span style={{ color: "red" }}>❌</span>;
-  return <span style={{ color: "#666" }}>⏸️</span>;
+function StatusIcon({ state }) {
+  if (state === "done") return <span className="icon done">●</span>;
+  if (state === "running") return <span className="icon running">◐</span>;
+  if (state === "error") return <span className="icon error">●</span>;
+  return <span className="icon idle">○</span>;
 }

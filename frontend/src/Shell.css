@@ -1,0 +1,136 @@
+:root {
+  --bg: #000;
+  --surface: #111;
+  --accent: #0AFFFF;
+  --text: #ffffff;
+  --text-secondary: #a1a1aa;
+  --error: #ff3b30;
+  --radius: 6px;
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.shell {
+  display: flex;
+  height: 100vh;
+  background: var(--bg);
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* Rail */
+.rail {
+  width: 220px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  padding: 40px 24px;
+  gap: 28px;
+}
+
+.step {
+  all: unset;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: color 120ms var(--ease);
+}
+
+.step:hover {
+  color: var(--text);
+}
+
+.step.active {
+  color: var(--accent);
+}
+
+.label {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* State dots */
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot.done {
+  background: var(--accent);
+}
+
+.dot.pending {
+  border: 1.5px solid var(--text-secondary);
+}
+
+.dot.active {
+  background: var(--error);
+}
+
+/* Stage */
+.stage {
+  flex: 1;
+  padding: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage-content {
+  font-size: 24px;
+  color: var(--text-secondary);
+}
+
+/* Upload Stage */
+.upload-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  gap: 1rem;
+}
+
+.upload-stage input {
+  display: none;            /* keep it invisible */
+}
+
+.upload-stage p {
+  cursor: pointer;
+  font-size: 17px;
+  padding: 2rem 3rem;
+  border: 1px dashed #333;
+  border-radius: var(--radius);
+  transition: border-color 120ms var(--ease);
+}
+
+.upload-stage p:hover {
+  border-color: var(--accent);
+}
+
+/* Typography for transcript, atoms, and annotated sections */
+.transcript .speaker {
+  font-variant-caps: all-small-caps;
+  font-weight: 600;
+  color: var(--accent);
+  margin-right: 0.5em;
+}
+
+.atoms p {
+  margin: 0 0 2.2rem 0;
+}
+
+.annotated .unit p {
+  margin: 0;
+}
+
+.annotated aside {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+  letter-spacing: 0.03em;
+}

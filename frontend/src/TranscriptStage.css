@@ -1,0 +1,27 @@
+.transcript-stage {
+  padding: 40px;
+  font-family: "Inter", sans-serif;
+  color: #ffffff;
+  background: #1a1a1a;
+}
+
+.transcript-content {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.transcript-block {
+  margin-bottom: 20px;
+}
+
+.speaker {
+  font-weight: bold;
+  color: #00b8d4; /* Muted blue for speaker labels */
+  margin-bottom: 5px;
+}
+
+.transcript-block p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
