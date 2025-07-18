@@ -14,6 +14,7 @@ import time
 from uuid import uuid4
 from fastapi.responses import PlainTextResponse, JSONResponse
 from fastapi import HTTPException
+import uuid
 
 UPLOAD_DIR = "uploads"
 CLEANED_DIR = "cleaned"
@@ -66,45 +67,29 @@ def run_llm_normalizer(raw_text: str) -> str:
         print(f"Error from Gemini: {e}")
         return "[LLM error]"
 
-def run_llm_atomiser(clean_text: str) -> list[dict]:
-    prompt = (
-        "You are an \"Idea Atomiser\" working with cleaned UX research transcripts.\n\n"
-        "Your job is to break the transcript into discrete **idea units**, or \"atoms\".\n\n"
-        "Each atom must:\n"
-        "- Be 1–3 sentences long\n"
-        "- Be self-contained (understandable without additional context)\n"
-        "- Include only one coherent thought or idea\n"
-        "- Include the **speaker label**, preserved as given (e.g., 'AJENA', 'ERIC', or 'SPEAKER 1')\n\n"
-        "Guidelines:\n"
-        "- Do not combine ideas from different speakers into one atom\n"
-        "- If a speaker shifts topics, split that into multiple atoms\n"
-        "- Retain any emotional tone or opinion expressed — it may be useful later\n"
-        "- Avoid splitting mid-sentence unless absolutely necessary\n\n"
-        "Output ONLY a valid JSON list, no extra commentary.\n"
-        "Example:\n"
-        '[{"speaker": "ERIC", "text": "I grew up in Roanoke and loved spending time outdoors with my brothers."}]\n\n'
-        "Here is the cleaned transcript:\n---\n"
-        f"{clean_text}\n---"
-    )
+ATOMISER_PROMPT = """You are an “Atomic Evidence Splitter”.\n\nInput: cleaned transcript  \nOutput: JSON list of atoms.\n\nSchema per atom:\n{\n  \"id\": \"<uuid>\",\n  \"speaker\": \"<speaker>\",\n  \"text\": \"<1–3 sentence idea>\",\n  \"context\": \"<±2 sentences for context>\",\n  \"entities\": {\n    \"objects\": [],\n    \"tasks\": [],\n    \"emotions\": []\n  },\n  \"confidence\": \"high|medium|low\"\n}\n\nRules:\n- Cut only at natural idea boundaries.  \n- Never merge speakers.  \n- Entities must appear verbatim in text.  \n- If unsure, mark confidence=low and shorten text.  \n\nReturn ONLY valid JSON. No commentary.\n\nTranscript:\n{transcript}\n"""
 
+def run_llm_atomiser(clean_text: str) -> list[dict]:
+    prompt = ATOMISER_PROMPT.replace("{transcript}", clean_text)
     try:
         response = gemini_model.generate_content(prompt)
         raw = response.text.strip()
-
-        # Remove Markdown fences if present
-        import re
-        raw = re.sub(r'```(?:json)?|```', '', raw).strip()
-
+        raw = re.sub(r'^```(?:json)?|```$', '', raw, flags=re.M).strip()
         atoms = json.loads(raw)
         if not isinstance(atoms, list):
-            raise ValueError("Not a list")
+            raise ValueError("Expected list")
+        # Ensure UUIDs if missing
+        for a in atoms:
+            a.setdefault("id", str(uuid.uuid4()))
         return atoms
     except Exception as e:
-        print("Atomiser failed:", e)
-        print("Raw response:", repr(raw))
-        return [
-            {"speaker": "ERROR", "text": f"[Atomiser failed: {e}]"}
-        ]  # non-empty so frontend shows the error
+        print("Atomiser error:", e)
+        return [{"id": str(uuid.uuid4()),
+                 "speaker": "ERROR",
+                 "text": f"[Atomiser failed: {e}]",
+                 "context": "",
+                 "entities": {"objects": [], "tasks": [], "emotions": []},
+                 "confidence": "low"}]
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     doc = fitz.open(pdf_path)
