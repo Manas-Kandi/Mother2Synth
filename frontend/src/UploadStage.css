@@ -75,3 +75,52 @@ input[type="file"] {
     transform: scale(1.2);
   }
 }
+
+.project-list {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 2rem;
+  max-width: 400px;
+}
+
+.project-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.flags span {
+  margin-left: 0.5rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #fff;
+}
+.flags .done { background: #0aff99; }
+.flags .pending { background: #444; }
+
+.jump-link {
+  background: none;
+  border: none;
+  color: #0affff;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+}
+.jump-link:hover {
+  color: #fff;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #ff4d4d;
+  cursor: pointer;
+  padding: 2px;
+  margin-left: auto;
+}
+.delete-btn:hover {
+  color: #ff0000;
+}

@@ -36,24 +36,41 @@ export default function Shell() {
     setAtoms(atomsRes[files[0].name] || []);
     setStatusMessage("Annotating…");
     const annotatedRes = await (
-      await fetch("http://localhost:8000/annotate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(atomsRes[files[0].name] || []),
-      })
+      await fetch(
+        `http://localhost:8000/annotate?filename=${encodeURIComponent(files[0].name)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(atomsRes[files[0].name] || []),
+        }
+      )
     ).json();
     setAnnotated(annotatedRes);
     setStatusMessage("Building graph…");
     const graphRes = await (
-      await fetch("http://localhost:8000/graph", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(annotatedRes),
-      })
+      await fetch(
+        `http://localhost:8000/graph?filename=${encodeURIComponent(files[0].name)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(annotatedRes),
+        }
+      )
     ).json();
     setGraph(graphRes);
     setStatusMessage("Done. Ready to view.");
     setActive(0);
+  }
+
+  // Helper to load all cached pipeline data for a project
+  async function loadCached(filename) {
+    const [cleaned, atoms, annotated, graph] = await Promise.all([
+      fetch(`http://localhost:8000/cached/cleaned/${encodeURIComponent(filename)}`).then(r => r.text()),
+      fetch(`http://localhost:8000/cached/atoms/${encodeURIComponent(filename)}`).then(r => r.json()),
+      fetch(`http://localhost:8000/cached/annotated/${encodeURIComponent(filename)}`).then(r => r.json()),
+      fetch(`http://localhost:8000/cached/graph/${encodeURIComponent(filename)}`).then(r => r.json())
+    ]);
+    return { cleaned, atoms, annotated, graph };
   }
 
   return (
@@ -81,7 +98,20 @@ export default function Shell() {
         </button>
       </nav>
       <main className="stage">
-        {active === -1 && <UploadStage onFiles={handleFiles} statusMessage={statusMessage} />}
+        {active === -1 && (
+          <UploadStage
+            onFiles={handleFiles}
+            statusMessage={statusMessage}
+            onJump={async (filename) => {
+              const data = await loadCached(filename);
+              setCleaned(data.cleaned);
+              setAtoms(data.atoms);
+              setAnnotated(data.annotated);
+              setGraph(data.graph);
+              setActive(0); // jump to Transcript
+            }}
+          />
+        )}
         {active === 0 && <TranscriptStage transcript={cleaned} />}
         {active === 1 && <AtomsStage atoms={atoms} />}
         {active === 2 && <AnnotatedAtomsStage annotatedAtoms={annotated} />}

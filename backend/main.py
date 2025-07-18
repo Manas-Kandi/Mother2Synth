@@ -12,8 +12,14 @@ import json
 import re
 import time
 from uuid import uuid4
+from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi import HTTPException
 
 UPLOAD_DIR = "uploads"
+CLEANED_DIR = "cleaned"
+ATOMS_DIR = "atoms"
+ANNOTATED_DIR = "annotated"
+GRAPH_DIR = "graph"
 
 LLM_PROMPT = """
 You are a senior UX research assistant.
@@ -111,6 +117,10 @@ def extract_text_from_pdf(pdf_path: str) -> str:
 #if os.path.exists(UPLOAD_DIR):
 #    shutil.rmtree(UPLOAD_DIR)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(CLEANED_DIR, exist_ok=True)
+os.makedirs(ATOMS_DIR, exist_ok=True)
+os.makedirs(ANNOTATED_DIR, exist_ok=True)
+os.makedirs(GRAPH_DIR, exist_ok=True)
 
 app = FastAPI()
 
@@ -145,11 +155,20 @@ async def normalize_files():
         if not filename.lower().endswith(".pdf"):
             continue
 
-        pdf_path = os.path.join(upload_dir, filename)
-        full_text = extract_text_from_pdf(pdf_path)
-        cleaned = clean_transcript(full_text)
-        cleaned_text = run_llm_normalizer(cleaned)
-        print(f"---\nNormalized output for {filename}:\n{cleaned_text}\n---")
+        cleaned_path = os.path.join(CLEANED_DIR, filename.replace(".pdf", ".txt"))
+
+        # 1️⃣  Return cached if it exists
+        if os.path.exists(cleaned_path):
+            with open(cleaned_path, "r", encoding="utf-8") as f:
+                cleaned_text = f.read()
+        else:
+            # 2️⃣  Run LLM once, then cache
+            pdf_path = os.path.join(upload_dir, filename)
+            raw_text = extract_text_from_pdf(pdf_path)
+            cleaned_text = run_llm_normalizer(raw_text)
+            with open(cleaned_path, "w", encoding="utf-8") as f:
+                f.write(cleaned_text)
+
         normalized_output[filename] = cleaned_text
 
     return normalized_output
@@ -164,12 +183,22 @@ async def atomise_files():
         if not filename.lower().endswith(".pdf"):
             continue
 
-        pdf_path = os.path.join(upload_dir, filename)
-        full_text = extract_text_from_pdf(pdf_path)
-        # Step 1: Normalize the text
-        clean_text = run_llm_normalizer(full_text)
-        # Step 2: Atomise the clean text
-        atoms = run_llm_atomiser(clean_text)
+        atoms_path = os.path.join(ATOMS_DIR, filename.replace(".pdf", ".json"))
+
+        # 1️⃣  Return cached if it exists
+        if os.path.exists(atoms_path):
+            with open(atoms_path, "r", encoding="utf-8") as f:
+                atoms = json.load(f)
+        else:
+            # 2️⃣  Run LLM once, then cache
+            pdf_path = os.path.join(upload_dir, filename)
+            full_text = extract_text_from_pdf(pdf_path)
+            clean_text = run_llm_normalizer(full_text)  # uses cached cleaned.txt if already there
+            atoms = run_llm_atomiser(clean_text)
+
+            with open(atoms_path, "w", encoding="utf-8") as f:
+                json.dump(atoms, f, indent=2, ensure_ascii=False)
+
         atomised_output[filename] = atoms
 
     return atomised_output
@@ -208,11 +237,29 @@ def annotate_atom(text: str) -> dict:
         return {"speech_act": "ERROR", "sentiment": "ERROR"}
 
 @app.post("/annotate")
-async def annotate_atoms(atoms: list[dict]):
-    enriched = []
-    for atom in atoms:
-        tags = annotate_atom(atom["text"])
-        enriched.append({**atom, **tags})
+async def annotate_atoms(atoms: list[dict], filename: str):
+    """
+    Expects query param ?filename=somefile.pdf
+    """
+    annotated_path = os.path.join(
+        ANNOTATED_DIR,
+        filename.replace(".pdf", ".json")
+    )
+
+    # 1️⃣  Return cached if it exists
+    if os.path.exists(annotated_path):
+        with open(annotated_path, "r", encoding="utf-8") as f:
+            enriched = json.load(f)
+    else:
+        # 2️⃣  Run LLM once, then cache
+        enriched = []
+        for atom in atoms:
+            tags = annotate_atom(atom["text"])
+            enriched.append({**atom, **tags})
+
+        with open(annotated_path, "w", encoding="utf-8") as f:
+            json.dump(enriched, f, indent=2, ensure_ascii=False)
+
     return enriched
 
 def clean_transcript(raw_text: str) -> str:
@@ -318,26 +365,122 @@ EXAMPLE OUTPUT
 """
 
 @app.post("/graph")
-async def build_graph(atoms: list[dict]):
-    for atom in atoms:
-        atom.setdefault("id", str(uuid4()))
-    prompt = GRAPH_BUILDER_PROMPT.replace("{atoms}", json.dumps(atoms, ensure_ascii=False))
-    try:
-        response = gemini_model.generate_content(prompt)
-        raw = response.text.strip()
-        if raw.startswith("```json"):
-            raw = raw.split("```", 1)[1].strip()
-        graph = json.loads(raw)
+async def build_graph(atoms: list[dict], filename: str):
+    """
+    Expects query param ?filename=somefile.pdf
+    """
+    graph_path = os.path.join(
+        GRAPH_DIR,
+        filename.replace(".pdf", ".json")
+    )
 
-        # Add human-readable descriptions
+    # 1️⃣  Return cached if it exists
+    if os.path.exists(graph_path):
+        with open(graph_path, "r", encoding="utf-8") as f:
+            graph = json.load(f)
+    else:
+        # 2️⃣  Run LLM once, then cache
+        for atom in atoms:
+            atom.setdefault("id", str(uuid4()))
+
+        prompt = GRAPH_BUILDER_PROMPT.replace(
+            "{atoms}",
+            json.dumps(atoms, ensure_ascii=False)
+        )
+        try:
+            response = gemini_model.generate_content(prompt)
+            raw = response.text.strip()
+            if raw.startswith("```json"):
+                raw = raw.split("```", 1)[1].strip()
+            graph = json.loads(raw)
+        except Exception as e:
+            print("Graph builder error:", e)
+            graph = {"nodes": atoms, "edges": [], "meta": {}, "facets": {}}
+
+        # Add human-readable helpers
         graph["nodes_desc"] = "List of every atom with extracted entities."
         graph["edges_desc"] = (
             "Links between atoms that share an object, task, emotion, or persona. "
             "Empty list means no explicit overlap was found."
         )
-        if not graph.get("edges"):
-            graph["edges_note"] = "None of the atoms share explicit common entities."
-        return graph
-    except Exception as e:
-        print("Graph builder error:", e)
-        return {"nodes": atoms, "edges": [], "meta": {}, "facets": {}}
+
+        with open(graph_path, "w", encoding="utf-8") as f:
+            json.dump(graph, f, indent=2, ensure_ascii=False)
+
+    return graph
+
+@app.get("/projects")
+async def list_projects():
+    """
+    Returns a map:
+    {
+      "demo.pdf": {
+        "cleaned": true,
+        "atoms": true,
+        "annotated": true,
+        "graph": true
+      },
+      ...
+    }
+    """
+    projects = {}
+    for filename in os.listdir("uploads"):
+        if not filename.lower().endswith(".pdf"):
+            continue
+
+        base = filename.replace(".pdf", "")
+        projects[filename] = {
+            "cleaned": os.path.exists(os.path.join(CLEANED_DIR, f"{base}.txt")),
+            "atoms": os.path.exists(os.path.join(ATOMS_DIR, f"{base}.json")),
+            "annotated": os.path.exists(os.path.join(ANNOTATED_DIR, f"{base}.json")),
+            "graph": os.path.exists(os.path.join(GRAPH_DIR, f"{base}.json")),
+        }
+    return projects
+
+@app.get("/cached/{stage}/{filename}")
+async def get_cached(stage: str, filename: str):
+    """
+    stage = cleaned | atoms | annotated | graph
+    filename = demo.pdf
+    Returns the cached JSON (or plain text for cleaned)
+    """
+    base = filename.replace(".pdf", "")
+    paths = {
+        "cleaned":   os.path.join(CLEANED_DIR,   f"{base}.txt"),
+        "atoms":     os.path.join(ATOMS_DIR,     f"{base}.json"),
+        "annotated": os.path.join(ANNOTATED_DIR, f"{base}.json"),
+        "graph":     os.path.join(GRAPH_DIR,     f"{base}.json"),
+    }
+    path = paths.get(stage)
+    if not path or not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="not cached")
+
+    if stage == "cleaned":
+        return PlainTextResponse(open(path, encoding="utf-8").read())
+    else:
+        return JSONResponse(json.load(open(path, encoding="utf-8")))
+
+@app.delete("/projects/{filename}")
+async def delete_project(filename: str):
+    """
+    filename = demo.pdf
+    Removes:
+      uploads/demo.pdf
+      cleaned/demo.txt
+      atoms/demo.json
+      annotated/demo.json
+      graph/demo.json
+    """
+    base = filename.replace(".pdf", "")
+    files_to_delete = [
+        os.path.join("uploads", filename),
+        os.path.join(CLEANED_DIR, f"{base}.txt"),
+        os.path.join(ATOMS_DIR, f"{base}.json"),
+        os.path.join(ANNOTATED_DIR, f"{base}.json"),
+        os.path.join(GRAPH_DIR, f"{base}.json"),
+    ]
+    for path in files_to_delete:
+        if os.path.exists(path):
+            os.remove(path)
+
+    return {"ok": True}
