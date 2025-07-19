@@ -8,6 +8,7 @@ import GraphStage from "./GraphStage";
 
 export default function Shell() {
   const [active, setActive] = useState(-1); // -1: Upload, 0: Transcript, 1: Atoms, 2: Annotations, 3: Graph
+  const [currentFile, setCurrentFile] = useState("");
   const [cleaned, setCleaned] = useState("");
   const [atoms, setAtoms] = useState([]);
   const [annotated, setAnnotated] = useState([]);
@@ -60,6 +61,7 @@ export default function Shell() {
     setGraph(graphRes);
     setStatusMessage("Done. Ready to view.");
     setActive(0);
+    setCurrentFile(files[0].name); // ← keep track
   }
 
   // Helper to load all cached pipeline data for a project

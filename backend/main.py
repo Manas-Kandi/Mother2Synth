@@ -114,6 +114,8 @@ app.add_middleware(
     allow_origins=["http://localhost:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    allow_credentials=True,
 )
 
 @app.post("/upload")
@@ -189,37 +191,22 @@ async def atomise_files():
     return atomised_output
 
 
-ANNOTATOR_PROMPT = """
-You are a precise tagging assistant.  
-Given an idea atom from a UX-research transcript, return ONLY a JSON object with two keys:
-
-- speech_act: pick the single best label from [statement, question, command, complaint, praise, confession, idea, clarification]
-- sentiment: pick the single best label from [positive, neutral, negative, mixed]
-
-Atom:
-{atom_text}
-
-Return only the JSON object, no extra text.
-"""
+ANNOTATOR_PROMPT = """You are a UX-insight extractor.\n\nReturn JSON:\n\n{\n  \"insights\": [\n    {\"type\": \"<meta-category>\", \"label\": \"<≤3 words>\", \"weight\": 0.0-1.0}\n  ],\n  \"tags\": [\"keyword1\", \"keyword2\"]\n}\n\nAllowed types & examples\npersona: mobile user | admin | new hire  \npain: login friction | hidden cost | broken flow  \nemotion: annoyance | anxiety | delight  \nroot_cause: validation bug | slow backend  \nimpact: task abandon | time lost  \ncontext: on-the-go | multitasking  \ndevice: Android | iPhone | desktop  \nchannel: web | app | phone call  \nfrequency: daily | weekly | first-time  \nseverity: blocker | minor | workaround exists\n\nRules\n- Emit 0-2 insights per type, ≤8 total  \n- weight = confidence 0-1  \n- labels verbatim when possible  \n- skip any you can’t ground\n\nQuote:\n{atom_text}\n"""
 
 def annotate_atom(text: str) -> dict:
-    prompt = (
-        "Tag only. Return JSON: {\"speech_act\":\"...\",\"sentiment\":\"...\"}\n"
-        "Allowed speech_act: statement,question,command,complaint,praise,confession,idea,clarification\n"
-        "Allowed sentiment: positive,neutral,negative,mixed\n\n"
-        f"Text: {text}"
-    )
+    prompt = ANNOTATOR_PROMPT.replace("{atom_text}", text)
     try:
-        response = gemini_model.generate_content(prompt, request_options={"timeout": 5000})  # 5 sec
+        response = gemini_model.generate_content(prompt)
         raw = response.text.strip()
-        print("LLM raw ->", repr(raw))
-        m = re.search(r'\{.*?\}', raw, re.DOTALL)
-        payload = json.loads(m.group(0))
-        return {"speech_act": payload.get("speech_act", "UNKNOWN"),
-                "sentiment": payload.get("sentiment", "UNKNOWN")}
+        raw = re.sub(r'^```(?:json)?|```$', '', raw, flags=re.M).strip()
+        payload = json.loads(raw)
+        return {
+            "insights": payload.get("insights", []),
+            "tags":     payload.get("tags", [])
+        }
     except Exception as e:
         print("annotate_atom error:", e)
-        return {"speech_act": "ERROR", "sentiment": "ERROR"}
+        return {"insights": [], "tags": []}
 
 @app.post("/annotate")
 async def annotate_atoms(atoms: list[dict], filename: str):
@@ -264,134 +251,35 @@ def clean_transcript(raw_text: str) -> str:
 
     return "\n".join(cleaned)
 
-GRAPH_BUILDER_PROMPT = """
-You are an **evidence-synthesis architect**.  
-You read every atom, then **build a living knowledge graph** that a UX researcher can query, remix, and evolve.
-
-INPUT  
-List of annotated atoms (each already contains id, speaker, text, speech_act, sentiment, etc.).
-
-OUTPUT  
-A single JSON object with four top-level keys:
-
-1. nodes  
-   Same atoms as before, but enriched with **entity arrays** (see below).
-
-2. edges  
-   Links between nodes that share **objects, tasks, emotions, personas, or journey steps**.
-
-3. meta  
-   High-level **insights** (personas, pain clusters, journey map) distilled from the entire set.
-
-4. facets  
-   User-defined, open schema facets (device, channel, cost, etc.) discovered in-text.
-
-----------------------------------------------------
-DETAILED SCHEMA
-----------------------------------------------------
-nodes: [
-  {
-    "id": "...",
-    "speaker": "...",
-    "text": "...",
-    "speech_act": "...",
-    "sentiment": "...",
-    "entities": {
-      "objects": ["password field", "reset email"],
-      "tasks": ["login", "fill form"],
-      "emotions": ["frustration"],
-      "personas": ["mobile user"],
-      "journey_step": "reset attempt"
-    }
-  }
-]
-
-edges: [
-  {
-    "source": "node_id",
-    "target": "node_id",
-    "type": "shared_object|shared_task|shared_emotion|shared_persona|journey_flow",
-    "label": "concise label ≤15 chars"
-  }
-]
-
-meta: {
-  "personas": ["frustrated mobile user", "admin"],
-  "pain_clusters": ["login friction", "missing autosave"],
-  "journey_map": [
-    {"step": "login attempt", "sentiment": "negative", "atoms": ["a1","a3"]},
-    {"step": "reset attempt", "sentiment": "negative", "atoms": ["a4","a5"]}
-  ],
-  "top_objects": ["password field", "reset email", "form"],
-  "top_tasks": ["login", "reset"]
-}
-
-facets: {
-  "device": ["desktop", "mobile"],
-  "channel": ["app", "website"],
-  "cost": ["free", "paid"],
-  "frequency": ["daily", "weekly"]
-}
-----------------------------------------------------
-RULES
-----------------------------------------------------
-1. **Extract entities verbatim**; no paraphrasing.  
-2. **Only create edges when commonality is explicit** in text.  
-3. **Keep labels concise** (≤15 chars).  
-4. **Meta insights must be evidence-backed** (reference atom IDs in `journey_map`).  
-5. **Facets are optional**; omit if absent.  
-6. **Return strict JSON** with keys: nodes, edges, meta, facets.
-
-EXAMPLE INPUT  
-[{"id":"a1","speaker":"Speaker 1","text":"I wait for the reset email","sentiment":"negative"}]
-
-EXAMPLE OUTPUT  
-{"nodes":[...],"edges":[...],"meta":{...},"facets":{...}}
-"""
+GRAPH_BUILDER_PROMPT = """You are an insight-web v2 architect.\n\nInput: list of annotated atoms (with insights array).\n\nGoals\n1. Exact edges: keep \"shared label\" edges (weight = min weight ≥ 0.7).\n2. Inference edges: create \"inferred_<type>\" edge when two atoms have semantically related insights (e.g., \"login friction\" ≈ \"wrong password\"); weight = average of the two insight weights, threshold ≥ 0.75.\n3. Auto-themes: group atoms into named themes (≤ 3 words) if ≥ 3 atoms share dominant insight patterns.\n4. Auto-journey: create lightweight "as-is" journey by ordering atoms chronologically and tagging each step with dominant pain + emotion.\n\nOutput JSON:\n{\n  \"nodes\": [...],\n  \"edges\": [...],\n  \"clusters\": {...},\n  \"themes\": [\n    {\"name\": \"login friction\", \"atoms\": [...], \"dominant_insights\": {\"pain\": \"login friction\", \"emotion\": \"frustration\"}, \"pain_score\": 0.95}\n  ],\n  \"journey\": [\n    {\"step\": \"login attempt\", \"pain\": \"wrong password\", \"emotion\": \"frustration\", \"atoms\": [...]}\n  ],\n  \"facets\": [...]\n}\n\nRules\n- Exact edge: same label, both weights ≥ 0.7.  \n- Inference edge: semantic similarity ≥ 0.75.  \n- Theme: ≥ 3 atoms.  \n- Journey: keep chronological order.  \n\nReturn strict JSON only."""
 
 @app.post("/graph")
 async def build_graph(atoms: list[dict], filename: str):
-    """
-    Expects query param ?filename=somefile.pdf
-    """
-    graph_path = os.path.join(
-        GRAPH_DIR,
-        filename.replace(".pdf", ".json")
-    )
-
-    # 1️⃣  Return cached if it exists
+    graph_path = os.path.join(GRAPH_DIR, filename.replace(".pdf", ".json"))
     if os.path.exists(graph_path):
         with open(graph_path, "r", encoding="utf-8") as f:
-            graph = json.load(f)
-    else:
-        # 2️⃣  Run LLM once, then cache
-        for atom in atoms:
-            atom.setdefault("id", str(uuid4()))
+            return json.load(f)
 
-        prompt = GRAPH_BUILDER_PROMPT.replace(
-            "{atoms}",
-            json.dumps(atoms, ensure_ascii=False)
-        )
-        try:
-            response = gemini_model.generate_content(prompt)
-            raw = response.text.strip()
-            if raw.startswith("```json"):
-                raw = raw.split("```", 1)[1].strip()
-            graph = json.loads(raw)
-        except Exception as e:
-            print("Graph builder error:", e)
-            graph = {"nodes": atoms, "edges": [], "meta": {}, "facets": {}}
+    prompt = GRAPH_BUILDER_PROMPT.replace("{atoms}", json.dumps(atoms, ensure_ascii=False))
+    try:
+        response = gemini_model.generate_content(prompt)
+        raw = response.text.strip()
+        if not raw or (raw.startswith("```") and "```" not in raw[3:]):
+            raise ValueError("Empty or malformed response")
+        if raw.startswith("```json"):
+            raw = raw.split("```", 1)[1].split("```", 1)[0].strip()
+        graph = json.loads(raw)
+    except Exception as e:
+        print("Graph LLM error:", e)
+        graph = {"nodes": atoms, "edges": [], "clusters": {}, "facets": [], "themes": []}
 
-        # Add human-readable helpers
-        graph["nodes_desc"] = "List of every atom with extracted entities."
-        graph["edges_desc"] = (
-            "Links between atoms that share an object, task, emotion, or persona. "
-            "Empty list means no explicit overlap was found."
-        )
+    # human helpers
+    graph["nodes_desc"] = "List of every atom."
+    graph["edges_desc"] = "Links between atoms sharing high-weight insights."
+    graph["clusters_desc"] = "Auto-groups per insight label (≥ 2 atoms)."
 
-        with open(graph_path, "w", encoding="utf-8") as f:
-            json.dump(graph, f, indent=2, ensure_ascii=False)
-
+    with open(graph_path, "w", encoding="utf-8") as f:
+        json.dump(graph, f, indent=2, ensure_ascii=False)
     return graph
 
 @app.get("/projects")

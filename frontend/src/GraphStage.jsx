@@ -1,6 +1,7 @@
 import "./GraphStage.css";
 
 export default function GraphStage({ graph }) {
+  if (!graph || !graph.nodes) return <p>No graph yet</p>;
   return (
     <section className="graph-stage">
       <h2>Research Graph</h2>
