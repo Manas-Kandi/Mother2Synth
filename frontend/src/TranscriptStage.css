@@ -1,36 +1,214 @@
 .transcript-stage {
-  padding: 2rem 3rem;
+  height: 100vh;
   background: var(--bg);
   color: var(--text);
-  height: 100%;
   overflow: hidden;
 }
 
-.transcript-header {
-  font-size: 1rem;
+.transcript-document {
+  height: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Document Header - integrated, not separated */
+.document-header {
+  margin-bottom: 3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 1.5rem;
+}
+
+.document-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.document-meta {
+  font-size: 0.875rem;
   color: var(--muted);
-  margin-bottom: 1rem;
+  font-weight: 400;
+}
+
+/* Flowing transcript */
+.transcript-flow {
+  line-height: 1.8;
+}
+
+.exchange {
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.speaker-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.speaker-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  transition: all 0.2s var(--ease);
+}
+
+.speaker-dot.interviewer {
+  background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+}
+
+.speaker-dot.participant {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.speaker-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  opacity: 0.8;
 }
 
-.transcript-scroll {
-  max-height: 80vh;
-  overflow-y: auto;
-  padding-right: 1rem;
+.exchange-content {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--text);
+  margin-left: 2.75rem;
+  position: relative;
+  padding-left: 1rem;
 }
 
-.speaker-block {
-  margin-bottom: 1.5rem;
+/* Subtle left border for flow */
+.exchange-content::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 1px;
 }
 
-.speaker-name {
-  font-weight: 600;
+/* Hover effect for exchanges */
+.exchange:hover .speaker-dot {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.exchange:hover .exchange-content::before {
+  background: rgba(10, 255, 255, 0.2);
+}
+
+.exchange:hover .speaker-label {
+  opacity: 1;
   color: var(--accent);
-  margin-bottom: 0.25rem;
 }
 
-.speaker-text {
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  gap: 1rem;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  opacity: 0.3;
+  margin-bottom: 0.5rem;
+}
+
+.empty-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.empty-text {
   font-size: 1rem;
-  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* Ultra-clean scrollbar */
+.transcript-document::-webkit-scrollbar {
+  width: 3px;
+}
+
+.transcript-document::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.transcript-document::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.transcript-document::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .transcript-document {
+    padding: 2rem 1rem;
+    max-width: 100%;
+  }
+  
+  .document-title {
+    font-size: 1.5rem;
+  }
+  
+  .exchange-content {
+    margin-left: 2rem;
+    font-size: 1rem;
+    padding-left: 0.75rem;
+  }
+  
+  .speaker-indicator {
+    gap: 0.5rem;
+  }
+}
+
+/* Subtle fade-in animation */
+.exchange {
+  animation: fadeInUp 0.3s ease-out;
+  animation-fill-mode: both;
+}
+
+.exchange:nth-child(1) { animation-delay: 0.05s; }
+.exchange:nth-child(2) { animation-delay: 0.1s; }
+.exchange:nth-child(3) { animation-delay: 0.15s; }
+.exchange:nth-child(4) { animation-delay: 0.2s; }
+.exchange:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
