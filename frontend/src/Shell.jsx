@@ -38,18 +38,18 @@ export default function Shell() {
 
     const updated = [];
 
-    for (const file of selectedFiles) {
+    for (const [i, file] of selectedFiles.entries()) {
       const filename = file.name;
 
-      setStatusMessage(`Cleaning: ${filename}`);
-      const norm = await (await fetch("http://localhost:8000/normalize")).json();
-      const cleaned = norm[filename] || "";
+      setStatusMessage(`Cleaning ${filename} (${i+1}/${selectedFiles.length})...`);
+      const norm = await (await fetch(`http://localhost:8000/normalize/${encodeURIComponent(filename)}`)).json();
+      const cleaned = norm.content || "";
 
-      setStatusMessage(`Atomizing: ${filename}`);
+      setStatusMessage(`Atomizing ${filename} (${i+1}/${selectedFiles.length})...`);
       const atomised = await (await fetch("http://localhost:8000/atomise")).json();
       const atoms = atomised[filename] || [];
 
-      setStatusMessage(`Annotating: ${filename}`);
+      setStatusMessage(`Annotating ${filename} (${i+1}/${selectedFiles.length})...`);
       const annotated = await (
         await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}`, {
           method: "POST",
@@ -58,7 +58,7 @@ export default function Shell() {
         })
       ).json();
 
-      setStatusMessage(`Graphing: ${filename}`);
+      setStatusMessage(`Graphing ${filename} (${i+1}/${selectedFiles.length})...`);
       const graph = await (
         await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}`, {
           method: "POST",

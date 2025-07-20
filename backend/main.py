@@ -266,6 +266,21 @@ async def normalize_files():
     return normalized_output
 
 
+@app.get("/normalize/{filename}")
+async def normalize_file(filename: str):
+    cleaned_path = os.path.join(CLEANED_DIR, filename.replace(".pdf", ".txt"))
+    if os.path.exists(cleaned_path):
+        with open(cleaned_path, "r", encoding="utf-8") as f:
+            return {"content": f.read()}
+    pdf_path = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(pdf_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    raw_text = extract_text_from_pdf(pdf_path)
+    cleaned_text = run_llm_normalizer(raw_text)
+    with open(cleaned_path, "w", encoding="utf-8") as f:
+        f.write(cleaned_text)
+    return {"content": cleaned_text}
+
 @app.get("/atomise")
 async def atomise_files():
     upload_dir = "uploads"
