@@ -274,27 +274,44 @@ async def build_graph(atoms: list[dict], filename: str):
         with open(graph_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
-    prompt = GRAPH_BUILDER_PROMPT.replace("{atoms}", json.dumps(atoms, ensure_ascii=False))
-    try:
-        response = gemini_model.generate_content(prompt)
-        raw = response.text.strip()
-        if not raw or (raw.startswith("```") and "```" not in raw[3:]):
-            raise ValueError("Empty or malformed response")
-        if raw.startswith("```json"):
-            raw = raw.split("```", 1)[1].split("```", 1)[0].strip()
-        graph = json.loads(raw)
-    except Exception as e:
-        print("Graph LLM error:", e)
-        graph = {"nodes": atoms, "edges": [], "clusters": {}, "facets": [], "themes": []}
+    # Build nodes
+    nodes = atoms
+    # Build edges based on shared insights
+    edges = []
+    for i in range(len(nodes)):
+        for j in range(i+1, len(nodes)):
+            node1 = nodes[i]
+            node2 = nodes[j]
+            shared = find_shared_insights(node1, node2)
+            if shared:
+                # Use the first shared insight for label/weight
+                label, _ = shared[0]
+                edges.append({
+                    "source": node1["id"],
+                    "target": node2["id"],
+                    "label": label,
+                    "weight": 1  # or use a more meaningful value if desired
+                })
 
-    # human helpers
-    graph["nodes_desc"] = "List of every atom."
-    graph["edges_desc"] = "Links between atoms sharing high-weight insights."
-    graph["clusters_desc"] = "Auto-groups per insight label (≥ 2 atoms)."
+    graph = {
+        "nodes": nodes,
+        "edges": edges,
+        "clusters": {},
+        "facets": [],
+        "themes": [],
+        "nodes_desc": "List of every atom.",
+        "edges_desc": "Links between atoms sharing high-weight insights.",
+        "clusters_desc": "Auto-groups per insight label (≥ 2 atoms)."
+    }
 
     with open(graph_path, "w", encoding="utf-8") as f:
         json.dump(graph, f, indent=2, ensure_ascii=False)
     return graph
+
+def find_shared_insights(node1, node2):
+    set1 = {(i["type"], i["label"]) for i in node1.get("insights", [])}
+    set2 = {(i["type"], i["label"]) for i in node2.get("insights", [])}
+    return list(set1 & set2)  # intersection
 
 @app.get("/projects")
 async def list_projects():

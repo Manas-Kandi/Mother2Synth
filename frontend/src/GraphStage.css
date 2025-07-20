@@ -1,7 +1,7 @@
 .graph-stage {
   max-width: 680px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
   font-family: "Inter", sans-serif;
   color: #ffffff;
   background: #1a1a1a;
@@ -37,4 +37,28 @@
 .empty-note {
   color: var(--muted);
   font-style: italic;
+}
+
+.graph-container {
+  background-color: #111;
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.graph-title {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #00eaff;
+  z-index: 10;
+}
+
+.graph-placeholder {
+  color: #ccc;
+  font-size: 1rem;
+  margin-left: 1rem;
+  margin-top: 3rem;
 }

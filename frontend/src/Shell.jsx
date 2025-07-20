@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useGlobalStore } from "./store";
 import "./Shell.css";
 import UploadStage from "./UploadStage";
 import TranscriptStage from "./TranscriptStage";
@@ -11,6 +12,7 @@ export default function Shell() {
   const [files, setFiles] = useState([]); // List of { name, cleaned, atoms, annotated, graph }
   const [activeFileIndex, setActiveFileIndex] = useState(null); // null until one is clicked
   const [statusMessage, setStatusMessage] = useState("");
+  const setSelectedFile = useGlobalStore((state) => state.setSelectedFile);
 
   async function loadCached(filename) {
     const [cleaned, atoms, annotated, graph] = await Promise.all([
@@ -78,6 +80,7 @@ export default function Shell() {
     const newFiles = [...files, ...updated];
     setFiles(newFiles);
     setActiveFileIndex(newFiles.length - updated.length); // select first of new batch
+    setSelectedFile(newFiles[newFiles.length - updated.length]?.name || null); // set global selectedFile
     setStage(0);
     setStatusMessage("Done.");
   }
@@ -115,6 +118,7 @@ export default function Shell() {
               const loaded = await loadCached(filename);
               setFiles([...files, loaded]);
               setActiveFileIndex(files.length);
+              setSelectedFile(filename); // set global selectedFile on jump
               setStage(0);
             }}
           />
