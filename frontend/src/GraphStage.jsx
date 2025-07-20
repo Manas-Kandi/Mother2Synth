@@ -1,6 +1,6 @@
 // Fixed GraphStage.jsx with proper data validation
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { useGlobalStore } from "./store";
 import "./GraphStage.css";
@@ -68,6 +68,9 @@ export default function GraphStage({ file }) {
   // Enhanced graph data with LLM-powered styling
   const [styledGraph, setStyledGraph] = useState(null);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [speakerFilter, setSpeakerFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
   
   const enhanceGraphWithLLM = async (rawGraph) => {
     if (!rawGraph || !rawGraph.nodes) return null;
@@ -154,6 +157,36 @@ export default function GraphStage({ file }) {
   }, [file?.graph]);
   
   const localGraph = styledGraph;
+
+  const speakerOptions = useMemo(() => {
+    if (!localGraph?.nodes) return [];
+    return Array.from(new Set(localGraph.nodes.map(n => n.speaker))).filter(Boolean);
+  }, [localGraph]);
+
+  const categoryOptions = useMemo(() => {
+    if (!localGraph?.nodes) return [];
+    return Array.from(new Set(localGraph.nodes.map(n => n.category || 'other')));
+  }, [localGraph]);
+
+  const filteredGraph = useMemo(() => {
+    if (!localGraph) return null;
+
+    const matches = localGraph.nodes.filter(n => {
+      const speakerOk = speakerFilter === 'All' || n.speaker === speakerFilter;
+      const categoryOk = categoryFilter === 'All' || (n.category || 'other') === categoryFilter;
+      const searchOk = searchQuery === '' || n.text?.toLowerCase().includes(searchQuery.toLowerCase());
+      return speakerOk && categoryOk && searchOk;
+    });
+
+    const nodeIds = new Set(matches.map(n => n.id));
+    const links = localGraph.links.filter(l => {
+      const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+      const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+      return nodeIds.has(sourceId) && nodeIds.has(targetId);
+    });
+
+    return { nodes: matches, links };
+  }, [localGraph, speakerFilter, categoryFilter, searchQuery]);
   
   console.log("GraphStage - raw graph:", file?.graph);
   console.log("GraphStage - formatted graph:", localGraph);
@@ -161,54 +194,53 @@ export default function GraphStage({ file }) {
   console.log("GraphStage - edge sources/targets:", localGraph?.links?.map(l => ({source: l.source, target: l.target})));
 
   useEffect(() => {
-    if (graphRef.current && localGraph?.nodes?.length > 0) {
+    if (graphRef.current && filteredGraph?.nodes?.length > 0) {
       graphRef.current.zoomToFit(500);
     }
-  }, [localGraph]);
+  }, [filteredGraph]);
 
   const handleNodeClick = (node) => {
     setSelectedNode(node);
   };
 
+  const renderNode = (node, ctx, globalScale) => {
+    const label = node.nodeIcon || '●';
+    const fontSize = 14 / globalScale;
+    ctx.font = `${fontSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = node.nodeColor || '#00ffff';
+    ctx.fillText(label, node.x, node.y);
+  };
+
   // Add effect to stabilize after initial load
   useEffect(() => {
-    if (graphRef.current && localGraph?.nodes?.length > 0) {
+    if (graphRef.current && filteredGraph?.nodes?.length > 0) {
       setTimeout(() => {
-        // Stop the simulation after it settles
         graphRef.current.d3Force('charge').strength(-30);
         graphRef.current.d3Force('link').strength(0.5);
       }, 3000);
     }
-  }, [localGraph]);
+  }, [filteredGraph]);
 
   const getConnectedNodes = (nodeId) => {
-    if (!localGraph) return [];
-    
-    console.log("Looking for connections for node:", nodeId);
-    console.log("Available links:", localGraph.links.slice(0, 3));
-    
-    const connections = localGraph.links
+    if (!filteredGraph) return [];
+
+    const connections = filteredGraph.links
       .filter(link => {
         // Handle both string IDs and object references
         const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
         const targetId = typeof link.target === 'object' ? link.target.id : link.target;
         const isConnected = sourceId === nodeId || targetId === nodeId;
-        
-        if (isConnected) {
-          console.log("Found connection:", {sourceId, targetId, nodeId});
-        }
-        
         return isConnected;
       })
       .map(link => {
         const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
         const targetId = typeof link.target === 'object' ? link.target.id : link.target;
         const connectedId = sourceId === nodeId ? targetId : sourceId;
-        return localGraph.nodes.find(n => n.id === connectedId);
+        return filteredGraph.nodes.find(n => n.id === connectedId);
       })
       .filter(Boolean);
-      
-    console.log("Connected nodes found:", connections.length);
     return connections;
   };
 
@@ -237,11 +269,57 @@ export default function GraphStage({ file }) {
         }}>
           Insights Graph
         </h2>
+
+        <div className="graph-controls">
+          <div className="filter-group">
+            <label className="filter-label">Speaker</label>
+            <select
+              className="filter-select"
+              value={speakerFilter}
+              onChange={(e) => setSpeakerFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              {speakerOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-label">Category</label>
+            <select
+              className="filter-select"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              {categoryOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label className="filter-label">Search</label>
+            <input
+              className="filter-select"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Find text..."
+            />
+          </div>
+        </div>
         
         {file && (
           <div style={{ color: "#666", fontSize: "0.8rem", marginTop: "0.5rem" }}>
-            {file.name} • {localGraph?.nodes?.length || 0} nodes • {localGraph?.links?.length || 0} connections
-            <button 
+            {file.name} • {filteredGraph?.nodes.length || 0}/{localGraph?.nodes?.length || 0} nodes
+            • {filteredGraph?.links.length || 0} connections
+            <button
               onClick={() => graphRef.current?.zoomToFit(1000)}
               style={{
                 marginLeft: "1rem",
@@ -268,22 +346,22 @@ export default function GraphStage({ file }) {
         right: 0,
         bottom: 0
       }}>
-        {localGraph && localGraph.nodes?.length > 0 ? (
+        {filteredGraph && filteredGraph.nodes?.length > 0 ? (
           <ForceGraph2D
             ref={graphRef}
-            graphData={localGraph}
+            graphData={filteredGraph}
             nodeLabel="text"
             nodeAutoColorBy="speaker"
             linkDirectionalParticles={2}       // Fewer particles for cleaner look
-            linkDirectionalArrowLength={4}     
+            linkDirectionalArrowLength={4}
             linkCurvature={0.1}                // Less curve for cleaner lines
             enableNodeDrag={true}
-            enablePanInteraction={true}        
-            enableZoomInteraction={true}       
+            enablePanInteraction={true}
+            enableZoomInteraction={true}
             backgroundColor="#000000"
-            linkColor={() => '#00ffff'}        
-            linkWidth={1}                      // Thinner links 
-            linkOpacity={0.6}                  
+            linkColor={() => '#00ffff'}
+            linkWidth={1}                      // Thinner links
+            linkOpacity={0.6}
             // Physics settings for stability
             d3AlphaDecay={0.02}               // Slower cooling
             d3AlphaMin={0.001}                // Don't stop completely
@@ -291,13 +369,14 @@ export default function GraphStage({ file }) {
             linkDistance={80}                 // Consistent link distance
             linkStrength={1}                  // Strong links
             nodeVal={node => {
-              const connections = localGraph.links.filter(link => {
+              const connections = filteredGraph.links.filter(link => {
                 const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
                 const targetId = typeof link.target === 'object' ? link.target.id : link.target;
                 return sourceId === node.id || targetId === node.id;
               }).length;
               return Math.max(8, connections * 3); // Bigger nodes
             }}
+            nodeCanvasObject={renderNode}
             onNodeClick={handleNodeClick}
           />
         ) : (
@@ -309,7 +388,19 @@ export default function GraphStage({ file }) {
           }}>
             {!file && "No file selected"}
             {file && !file.graph && "File has no graph data"}
-            {file && file.graph && (!localGraph?.nodes || localGraph.nodes.length === 0) && "Graph data is invalid or empty"}
+            {file && file.graph && (!filteredGraph?.nodes || filteredGraph.nodes.length === 0) && "Graph data is invalid or empty"}
+          </div>
+        )}
+        {isEnhancing && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#00ffff',
+            fontSize: '0.9rem'
+          }}>
+            Enhancing graph...
           </div>
         )}
       </div>
@@ -332,10 +423,13 @@ export default function GraphStage({ file }) {
               {selectedNode.text}
             </div>
             
-            <div className="node-meta">
-              <span className="speaker">{selectedNode.speaker}</span>
-              <span className="sentiment">{selectedNode.sentiment}</span>
-            </div>
+          <div className="node-meta">
+            <span className="speaker">{selectedNode.speaker}</span>
+            <span className="sentiment">{selectedNode.sentiment}</span>
+            {selectedNode.category && (
+              <span className="sentiment">{selectedNode.category}</span>
+            )}
+          </div>
             
             <div className="connections">
               <h4>Connected to ({getConnectedNodes(selectedNode.id).length})</h4>
