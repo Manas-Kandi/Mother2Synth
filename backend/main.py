@@ -1,9 +1,12 @@
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
 import google.generativeai as genai
-genai.configure(api_key="AIzaSyBLv7dA4tI0bZGo6DXGAQA1_-fKRqnieYc")  # ⬅️ Replace this with your real key
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))  # Load from .env
 
 gemini_model = genai.GenerativeModel(model_name="models/gemini-2.5-flash")
 
-import os
 import shutil
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
