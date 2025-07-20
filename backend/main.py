@@ -624,3 +624,33 @@ async def export_comments(filename: str):
 @app.get("/synthesis/{filename}/comments")
 async def get_synthesis_comments(filename: str):
     return await export_comments(filename)
+
+@app.post("/enhance-graph")
+async def enhance_graph(request: dict):
+    nodes = request.get("nodes", [])
+    if not nodes:
+        return []
+    prompt = '''\
+Analyze these user research insights and assign each one:
+1. A color (hex code) - red for pain points, green for positive behaviors, blue for technical issues, orange for comparisons, purple for emotions
+2. An emoji icon that represents the content
+3. A short 1-2 word label that captures the essence
+4. A category (pain, behavior, technical, comparison, emotion, other)
+
+Return JSON array with: [{"id": "...", "color": "#ff4757", "icon": "😤", "label": "frustration", "category": "pain"}]
+
+Insights: {insights}
+'''.replace("{insights}", json.dumps(nodes, ensure_ascii=False))
+    try:
+        response = gemini_model.generate_content(prompt)
+        raw = response.text.strip()
+        # Remove markdown code fences if present
+        if raw.startswith("```json"):
+            raw = raw[len("```json"):].strip()
+        if raw.endswith("```"):
+            raw = raw[:-3].strip()
+        styled_nodes = json.loads(raw)
+        return styled_nodes
+    except Exception as e:
+        print("enhance_graph error:", e)
+        return []
