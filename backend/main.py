@@ -238,34 +238,6 @@ async def upload_pdfs(files: list[UploadFile] = File(...)):
     print("Saved files:", saved_files)
     return {"message": f"Saved {len(saved_files)} file(s)", "files": saved_files}
 
-@app.get("/normalize")
-async def normalize_files():
-    upload_dir = "uploads"
-    normalized_output = {}
-
-    for filename in os.listdir(upload_dir):
-        if not filename.lower().endswith(".pdf"):
-            continue
-
-        cleaned_path = os.path.join(CLEANED_DIR, filename.replace(".pdf", ".txt"))
-
-        # 1️⃣  Return cached if it exists
-        if os.path.exists(cleaned_path):
-            with open(cleaned_path, "r", encoding="utf-8") as f:
-                cleaned_text = f.read()
-        else:
-            # 2️⃣  Run LLM once, then cache
-            pdf_path = os.path.join(upload_dir, filename)
-            raw_text = extract_text_from_pdf(pdf_path)
-            cleaned_text = run_llm_normalizer(raw_text)
-            with open(cleaned_path, "w", encoding="utf-8") as f:
-                f.write(cleaned_text)
-
-        normalized_output[filename] = cleaned_text
-
-    return normalized_output
-
-
 @app.get("/normalize/{filename}")
 async def normalize_file(filename: str):
     if not filename.lower().endswith(".pdf"):
@@ -282,36 +254,6 @@ async def normalize_file(filename: str):
     with open(cleaned_path, "w", encoding="utf-8") as f:
         f.write(cleaned_text)
     return {"content": cleaned_text}
-
-@app.get("/atomise")
-async def atomise_files():
-    upload_dir = "uploads"
-    atomised_output = {}
-
-    for filename in os.listdir(upload_dir):
-        if not filename.lower().endswith(".pdf"):
-            continue
-
-        atoms_path = os.path.join(ATOMS_DIR, filename.replace(".pdf", ".json"))
-
-        # 1️⃣  Return cached if it exists
-        if os.path.exists(atoms_path):
-            with open(atoms_path, "r", encoding="utf-8") as f:
-                atoms = json.load(f)
-        else:
-            # 2️⃣  Run LLM once, then cache
-            pdf_path = os.path.join(upload_dir, filename)
-            full_text = extract_text_from_pdf(pdf_path)
-            clean_text = run_llm_normalizer(full_text)  # uses cached cleaned.txt if already there
-            atoms = run_llm_atomiser(clean_text, filename)
-
-            with open(atoms_path, "w", encoding="utf-8") as f:
-                json.dump(atoms, f, indent=2, ensure_ascii=False)
-
-        atomised_output[filename] = atoms
-
-    return atomised_output
-
 
 @app.get("/atomise/{filename}")
 async def atomise_file(filename: str):

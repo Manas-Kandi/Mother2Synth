@@ -38,7 +38,8 @@ export default function Shell() {
 
     const updated = [];
 
-    for (const [i, file] of selectedFiles.entries()) {
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
       const filename = file.name;
 
       setStatusMessage(`Cleaning: ${filename} (${i+1}/${selectedFiles.length})`);
@@ -49,7 +50,7 @@ export default function Shell() {
       const atomRes = await fetch(`http://localhost:8000/atomise/${encodeURIComponent(filename)}`);
       const { atoms } = await atomRes.json();
 
-      setStatusMessage(`Annotating: ${filename} (${i+1}/${selectedFiles.length})...`);
+      setStatusMessage(`Annotating: ${filename} (${i+1}/${selectedFiles.length})`);
       const annotated = await (
         await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}`, {
           method: "POST",
@@ -58,7 +59,7 @@ export default function Shell() {
         })
       ).json();
 
-      setStatusMessage(`Graphing: ${filename} (${i+1}/${selectedFiles.length})...`);
+      setStatusMessage(`Graphing: ${filename} (${i+1}/${selectedFiles.length})`);
       const graph = await (
         await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}`, {
           method: "POST",
