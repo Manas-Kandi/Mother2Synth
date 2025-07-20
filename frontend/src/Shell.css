@@ -179,7 +179,9 @@
 
 /* Stage */
 .stage {
-  flex: 1;
+  flex: 1; /* Take remaining space after sidebar */
+  height: 100vh;
+  overflow: hidden; /* Prevent content from overflowing */
   padding: 80px;
   display: flex;
   align-items: center;
