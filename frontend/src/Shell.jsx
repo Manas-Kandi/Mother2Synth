@@ -89,24 +89,52 @@ export default function Shell() {
     return activeFileIndex != null ? files[activeFileIndex] : null;
   }
 
+  function handleFileSelect(index) {
+    setActiveFileIndex(index);
+    setSelectedFile(files[index]?.name || null);
+    if (stage === -1) setStage(0); // If on upload stage, move to transcript
+  }
+
   return (
     <div className="shell">
       <nav className="rail">
-        <button className={`step ${stage === -1 ? "active" : ""}`} onClick={() => setStage(-1)}>
-          <span className="dot"></span> <span className="label">Upload</span>
-        </button>
-        <button className={`step ${stage === 0 ? "active" : ""}`} onClick={() => setStage(0)}>
-          <span className="dot"></span> <span className="label">Transcript</span>
-        </button>
-        <button className={`step ${stage === 1 ? "active" : ""}`} onClick={() => setStage(1)}>
-          <span className="dot"></span> <span className="label">Atoms</span>
-        </button>
-        <button className={`step ${stage === 2 ? "active" : ""}`} onClick={() => setStage(2)}>
-          <span className="dot"></span> <span className="label">Annotations</span>
-        </button>
-        <button className={`step ${stage === 3 ? "active" : ""}`} onClick={() => setStage(3)}>
-          <span className="dot"></span> <span className="label">Graph</span>
-        </button>
+        <div className="rail-section">
+          <h3 className="rail-title">Pipeline</h3>
+          <button className={`step ${stage === -1 ? "active" : ""}`} onClick={() => setStage(-1)}>
+            <span className="dot"></span> <span className="label">Upload</span>
+          </button>
+          <button className={`step ${stage === 0 ? "active" : ""}`} onClick={() => setStage(0)}>
+            <span className="dot"></span> <span className="label">Transcript</span>
+          </button>
+          <button className={`step ${stage === 1 ? "active" : ""}`} onClick={() => setStage(1)}>
+            <span className="dot"></span> <span className="label">Atoms</span>
+          </button>
+          <button className={`step ${stage === 2 ? "active" : ""}`} onClick={() => setStage(2)}>
+            <span className="dot"></span> <span className="label">Annotations</span>
+          </button>
+          <button className={`step ${stage === 3 ? "active" : ""}`} onClick={() => setStage(3)}>
+            <span className="dot"></span> <span className="label">Graph</span>
+          </button>
+        </div>
+
+        {files.length > 0 && (
+          <div className="rail-section">
+            <h3 className="rail-title">Files</h3>
+            {files.map((file, index) => (
+              <button
+                key={file.name}
+                className={`file-item ${index === activeFileIndex ? "active" : ""}`}
+                onClick={() => handleFileSelect(index)}
+                title={file.name}
+              >
+                <span className="file-icon">📄</span>
+                <span className="file-name">
+                  {file.name.length > 18 ? `${file.name.substring(0, 18)}...` : file.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </nav>
 
       <main className="stage">

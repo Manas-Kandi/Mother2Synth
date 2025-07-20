@@ -7,51 +7,115 @@
   --error: #ff3b30;
   --radius: 6px;
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --border: #1a1a1a;
+  --muted: #666;
+}
+
+/* Global improvements */
+* {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 }
 
 .shell {
   display: flex;
   height: 100vh;
+  background: var(--bg);
+  color: var(--text);
 }
 
+/* Enhanced Rail */
 .rail {
-  width: 200px;
-  padding: 2rem 1.5rem;
+  width: 240px;
+  padding: 1.5rem 0;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
   border-right: 1px solid var(--border);
+  background: var(--surface);
+  overflow-y: auto;
 }
 
+.rail-section {
+  padding: 0 1rem;
+}
+
+.rail-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.75rem 0.75rem;
+}
+
+/* Enhanced Steps */
 .step {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-size: 0.9rem;
-  color: var(--muted);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  margin: 0.125rem 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+  width: 100%;
+  text-align: left;
+  font-weight: 500;
 }
 
 .step:hover {
+  background: #1a1a1a;
   color: var(--text);
 }
 
 .step.active {
+  background: rgba(10, 255, 255, 0.1);
   color: var(--accent);
+  font-weight: 600;
+}
+
+.step.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
+.step {
+  position: relative;
 }
 
 .label {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: inherit;
   letter-spacing: 0.01em;
 }
 
-/* State dots */
+/* Enhanced State dots */
 .dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--muted);
   flex-shrink: 0;
+  transition: background 0.15s var(--ease);
+}
+
+.step.active .dot {
+  background: var(--accent);
+}
+
+.step:hover .dot {
+  background: var(--text-secondary);
 }
 
 .dot.done {
@@ -60,10 +124,57 @@
 
 .dot.pending {
   border: 1.5px solid var(--text-secondary);
+  background: transparent;
 }
 
-.dot.active {
+.dot.error {
   background: var(--error);
+}
+
+/* File List */
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  margin: 0.125rem 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+  width: 100%;
+  text-align: left;
+  font-weight: 500;
+}
+
+.file-item:hover {
+  background: #1a1a1a;
+  color: var(--text);
+}
+
+.file-item.active {
+  background: rgba(10, 255, 255, 0.1);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.file-icon {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.file-item.active .file-icon {
+  opacity: 1;
+}
+
+.file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Stage */
@@ -73,6 +184,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--bg);
 }
 
 .stage-content {
@@ -92,7 +204,7 @@
 }
 
 .upload-stage input {
-  display: none;            /* keep it invisible */
+  display: none;
 }
 
 .upload-stage p {
@@ -129,4 +241,41 @@
   color: var(--text-secondary);
   margin-top: 0.3rem;
   letter-spacing: 0.03em;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Typography improvements */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--text);
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+
+p {
+  line-height: 1.6;
+  margin: 0;
+  color: var(--text-secondary);
 }
