@@ -1,70 +1,17 @@
 import { useState } from "react";
 import "./Shell.css";
+import UploadStage from "./UploadStage";
 import TranscriptStage from "./TranscriptStage";
 import AtomsStage from "./AtomsStage";
 import AnnotatedAtomsStage from "./AnnotatedAtomsStage";
-import UploadStage from "./UploadStage";
 import GraphStage from "./GraphStage";
 
 export default function Shell() {
-  const [active, setActive] = useState(-1); // -1: Upload, 0: Transcript, 1: Atoms, 2: Annotations, 3: Graph
-  const [currentFile, setCurrentFile] = useState("");
-  const [cleaned, setCleaned] = useState("");
-  const [atoms, setAtoms] = useState([]);
-  const [annotated, setAnnotated] = useState([]);
-  const [graph, setGraph] = useState({ nodes: [], edges: [] });
+  const [stage, setStage] = useState(-1); // -1: Upload, 0: Transcript, 1: Atoms, 2: Annotations, 3: Graph
+  const [files, setFiles] = useState([]); // List of { name, cleaned, atoms, annotated, graph }
+  const [activeFileIndex, setActiveFileIndex] = useState(null); // null until one is clicked
   const [statusMessage, setStatusMessage] = useState("");
 
-  const stages = [
-    { id: -1, label: "Upload", state: "upload" },
-    { id: 0, label: "Transcript", state: "done" },
-    { id: 1, label: "Atoms",      state: "done" },
-    { id: 2, label: "Annotations",   state: "pending" },
-    { id: 3, label: "Graph",   state: "pending" },
-  ];
-
-  async function handleFiles(files) {
-    if (!files.length) return;
-    setStatusMessage("Uploading PDF…");
-    const form = new FormData();
-    files.forEach(f => form.append("files", f));
-    await fetch("http://localhost:8000/upload", { method: "POST", body: form });
-    setStatusMessage("Cleaning transcript…");
-    const norm = await (await fetch("http://localhost:8000/normalize")).json();
-    setCleaned(norm[files[0].name] || "");
-    setStatusMessage("Atomizing…");
-    const atomsRes = await (await fetch("http://localhost:8000/atomise")).json();
-    setAtoms(atomsRes[files[0].name] || []);
-    setStatusMessage("Annotating…");
-    const annotatedRes = await (
-      await fetch(
-        `http://localhost:8000/annotate?filename=${encodeURIComponent(files[0].name)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(atomsRes[files[0].name] || []),
-        }
-      )
-    ).json();
-    setAnnotated(annotatedRes);
-    setStatusMessage("Building graph…");
-    const graphRes = await (
-      await fetch(
-        `http://localhost:8000/graph?filename=${encodeURIComponent(files[0].name)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(annotatedRes),
-        }
-      )
-    ).json();
-    setGraph(graphRes);
-    setStatusMessage("Done. Ready to view.");
-    setActive(0);
-    setCurrentFile(files[0].name); // ← keep track
-  }
-
-  // Helper to load all cached pipeline data for a project
   async function loadCached(filename) {
     const [cleaned, atoms, annotated, graph] = await Promise.all([
       fetch(`http://localhost:8000/cached/cleaned/${encodeURIComponent(filename)}`).then(r => r.text()),
@@ -72,52 +19,111 @@ export default function Shell() {
       fetch(`http://localhost:8000/cached/annotated/${encodeURIComponent(filename)}`).then(r => r.json()),
       fetch(`http://localhost:8000/cached/graph/${encodeURIComponent(filename)}`).then(r => r.json())
     ]);
-    return { cleaned, atoms, annotated, graph };
+    return { name: filename, cleaned, atoms, annotated, graph };
+  }
+
+  async function handleFiles(selectedFiles) {
+    if (!selectedFiles.length) return;
+
+    setStatusMessage("Uploading PDF(s)…");
+
+    const form = new FormData();
+    selectedFiles.forEach((f) => form.append("files", f));
+    await fetch("http://localhost:8000/upload", {
+      method: "POST",
+      body: form,
+    });
+
+    const updated = [];
+
+    for (const file of selectedFiles) {
+      const filename = file.name;
+
+      setStatusMessage(`Cleaning: ${filename}`);
+      const norm = await (await fetch("http://localhost:8000/normalize")).json();
+      const cleaned = norm[filename] || "";
+
+      setStatusMessage(`Atomizing: ${filename}`);
+      const atomised = await (await fetch("http://localhost:8000/atomise")).json();
+      const atoms = atomised[filename] || [];
+
+      setStatusMessage(`Annotating: ${filename}`);
+      const annotated = await (
+        await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(atoms),
+        })
+      ).json();
+
+      setStatusMessage(`Graphing: ${filename}`);
+      const graph = await (
+        await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(annotated),
+        })
+      ).json();
+
+      updated.push({ name: filename, cleaned, atoms, annotated, graph });
+      console.log("✅ Adding file to state:", {
+        name: filename,
+        cleaned,
+        atoms,
+        annotated,
+        graph
+      });
+    }
+
+    const newFiles = [...files, ...updated];
+    setFiles(newFiles);
+    setActiveFileIndex(newFiles.length - updated.length); // select first of new batch
+    setStage(0);
+    setStatusMessage("Done.");
+  }
+
+  function getActiveFile() {
+    return activeFileIndex != null ? files[activeFileIndex] : null;
   }
 
   return (
     <div className="shell">
       <nav className="rail">
-        <button className={`step ${active === -1 ? "active" : ""}`} onClick={() => setActive(-1)}>
-          <span className="dot done"></span>
-          <span className="label">Upload</span>
+        <button className={`step ${stage === -1 ? "active" : ""}`} onClick={() => setStage(-1)}>
+          <span className="dot"></span> <span className="label">Upload</span>
         </button>
-        <button className={`step ${active === 0 ? "active" : ""}`} onClick={() => setActive(0)}>
-          <span className="dot done"></span>
-          <span className="label">Transcript</span>
+        <button className={`step ${stage === 0 ? "active" : ""}`} onClick={() => setStage(0)}>
+          <span className="dot"></span> <span className="label">Transcript</span>
         </button>
-        <button className={`step ${active === 1 ? "active" : ""}`} onClick={() => setActive(1)}>
-          <span className="dot done"></span>
-          <span className="label">Atoms</span>
+        <button className={`step ${stage === 1 ? "active" : ""}`} onClick={() => setStage(1)}>
+          <span className="dot"></span> <span className="label">Atoms</span>
         </button>
-        <button className={`step ${active === 2 ? "active" : ""}`} onClick={() => setActive(2)}>
-          <span className="dot pending"></span>
-          <span className="label">Annotations</span>
+        <button className={`step ${stage === 2 ? "active" : ""}`} onClick={() => setStage(2)}>
+          <span className="dot"></span> <span className="label">Annotations</span>
         </button>
-        <button className={`step ${active === 3 ? "active" : ""}`} onClick={() => setActive(3)}>
-          <span className="dot pending">○</span>
-          <span className="label">Graph</span>
+        <button className={`step ${stage === 3 ? "active" : ""}`} onClick={() => setStage(3)}>
+          <span className="dot"></span> <span className="label">Graph</span>
         </button>
       </nav>
+
       <main className="stage">
-        {active === -1 && (
+        {stage === -1 && (
           <UploadStage
             onFiles={handleFiles}
             statusMessage={statusMessage}
             onJump={async (filename) => {
-              const data = await loadCached(filename);
-              setCleaned(data.cleaned);
-              setAtoms(data.atoms);
-              setAnnotated(data.annotated);
-              setGraph(data.graph);
-              setActive(0); // jump to Transcript
+              const loaded = await loadCached(filename);
+              setFiles([...files, loaded]);
+              setActiveFileIndex(files.length);
+              setStage(0);
             }}
           />
         )}
-        {active === 0 && <TranscriptStage transcript={cleaned} />}
-        {active === 1 && <AtomsStage atoms={atoms} />}
-        {active === 2 && <AnnotatedAtomsStage annotatedAtoms={annotated} />}
-        {active === 3 && <GraphStage graph={graph} />}
+
+        {stage === 0 && <TranscriptStage file={getActiveFile()} />}
+        {stage === 1 && <AtomsStage file={getActiveFile()} />}
+        {stage === 2 && <AnnotatedAtomsStage file={getActiveFile()} />}
+        {stage === 3 && <GraphStage file={getActiveFile()} />}
       </main>
     </div>
   );

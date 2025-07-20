@@ -1,0 +1,51 @@
+.themes-stage {
+  padding: 2rem 3rem;
+  background: var(--bg);
+  font-family: "Inter", sans-serif;
+  color: var(--text);
+  height: 100%;
+  overflow-x: auto;
+}
+
+.themes-grid {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.theme-column {
+  min-width: 260px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  flex-shrink: 0;
+}
+
+.theme-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 1rem;
+  white-space: nowrap;
+}
+
+.theme-atoms {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.atom-card {
+  font-size: 0.95rem;
+  background: #181818;
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: #ddd;
+  line-height: 1.5;
+}
+
+.atom-meta {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  color: var(--muted);
+}

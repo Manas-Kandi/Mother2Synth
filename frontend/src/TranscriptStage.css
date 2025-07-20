@@ -1,14 +1,23 @@
 .transcript-stage {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 2rem;
+  padding: 2rem 3rem;
+  background: var(--bg);
+  color: var(--text);
+  height: 100%;
+  overflow: hidden;
+}
+
+.transcript-header {
+  font-size: 1rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .transcript-scroll {
   max-height: 80vh;
   overflow-y: auto;
   padding-right: 1rem;
-  scrollbar-color: #333 #111;
 }
 
 .speaker-block {
@@ -24,5 +33,4 @@
 .speaker-text {
   font-size: 1rem;
   line-height: 1.6;
-  margin: 0;
 }

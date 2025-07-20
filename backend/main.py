@@ -69,27 +69,41 @@ def run_llm_normalizer(raw_text: str) -> str:
 
 ATOMISER_PROMPT = """You are an “Atomic Evidence Splitter”.\n\nInput: cleaned transcript  \nOutput: JSON list of atoms.\n\nSchema per atom:\n{\n  \"id\": \"<uuid>\",\n  \"speaker\": \"<speaker>\",\n  \"text\": \"<1–3 sentence idea>\",\n  \"context\": \"<±2 sentences for context>\",\n  \"entities\": {\n    \"objects\": [],\n    \"tasks\": [],\n    \"emotions\": []\n  },\n  \"confidence\": \"high|medium|low\"\n}\n\nRules:\n- Cut only at natural idea boundaries.  \n- Never merge speakers.  \n- Entities must appear verbatim in text.  \n- If unsure, mark confidence=low and shorten text.  \n\nReturn ONLY valid JSON. No commentary.\n\nTranscript:\n{transcript}\n"""
 
-def run_llm_atomiser(clean_text: str) -> list[dict]:
+def run_llm_atomiser(clean_text: str, source_file: str) -> list[dict]:
     prompt = ATOMISER_PROMPT.replace("{transcript}", clean_text)
     try:
         response = gemini_model.generate_content(prompt)
         raw = response.text.strip()
-        raw = re.sub(r'^```(?:json)?|```$', '', raw, flags=re.M).strip()
+
+        print("🧠 GEMINI RAW (Atomiser):")
+        print(repr(raw))
+
+        # Clean up markdown fences
+        raw = raw.replace("```json", "").replace("```", "").strip()
+
         atoms = json.loads(raw)
+
+        # Validate and enrich atoms
         if not isinstance(atoms, list):
-            raise ValueError("Expected list")
-        # Ensure UUIDs if missing
-        for a in atoms:
-            a.setdefault("id", str(uuid.uuid4()))
+            raise ValueError("Atomiser: Expected list")
+
+        for atom in atoms:
+            atom.setdefault("id", str(uuid4()))
+            atom["source_file"] = source_file  # 💡 Attach source info
+
         return atoms
+
     except Exception as e:
         print("Atomiser error:", e)
-        return [{"id": str(uuid.uuid4()),
-                 "speaker": "ERROR",
-                 "text": f"[Atomiser failed: {e}]",
-                 "context": "",
-                 "entities": {"objects": [], "tasks": [], "emotions": []},
-                 "confidence": "low"}]
+        return [{
+            "id": str(uuid4()),
+            "speaker": "ERROR",
+            "text": f"[Atomiser failed: {e}]",
+            "context": "",
+            "entities": {"objects": [], "tasks": [], "emotions": []},
+            "confidence": "low",
+            "source_file": source_file
+        }]
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     doc = fitz.open(pdf_path)
@@ -181,7 +195,7 @@ async def atomise_files():
             pdf_path = os.path.join(upload_dir, filename)
             full_text = extract_text_from_pdf(pdf_path)
             clean_text = run_llm_normalizer(full_text)  # uses cached cleaned.txt if already there
-            atoms = run_llm_atomiser(clean_text)
+            atoms = run_llm_atomiser(clean_text, filename)
 
             with open(atoms_path, "w", encoding="utf-8") as f:
                 json.dump(atoms, f, indent=2, ensure_ascii=False)
@@ -251,7 +265,7 @@ def clean_transcript(raw_text: str) -> str:
 
     return "\n".join(cleaned)
 
-GRAPH_BUILDER_PROMPT = """You are an insight-web v2 architect.\n\nInput: list of annotated atoms (with insights array).\n\nGoals\n1. Exact edges: keep \"shared label\" edges (weight = min weight ≥ 0.7).\n2. Inference edges: create \"inferred_<type>\" edge when two atoms have semantically related insights (e.g., \"login friction\" ≈ \"wrong password\"); weight = average of the two insight weights, threshold ≥ 0.75.\n3. Auto-themes: group atoms into named themes (≤ 3 words) if ≥ 3 atoms share dominant insight patterns.\n4. Auto-journey: create lightweight "as-is" journey by ordering atoms chronologically and tagging each step with dominant pain + emotion.\n\nOutput JSON:\n{\n  \"nodes\": [...],\n  \"edges\": [...],\n  \"clusters\": {...},\n  \"themes\": [\n    {\"name\": \"login friction\", \"atoms\": [...], \"dominant_insights\": {\"pain\": \"login friction\", \"emotion\": \"frustration\"}, \"pain_score\": 0.95}\n  ],\n  \"journey\": [\n    {\"step\": \"login attempt\", \"pain\": \"wrong password\", \"emotion\": \"frustration\", \"atoms\": [...]}\n  ],\n  \"facets\": [...]\n}\n\nRules\n- Exact edge: same label, both weights ≥ 0.7.  \n- Inference edge: semantic similarity ≥ 0.75.  \n- Theme: ≥ 3 atoms.  \n- Journey: keep chronological order.  \n\nReturn strict JSON only."""
+GRAPH_BUILDER_PROMPT = """You are an insight-web v2 architect.\n\nInput: list of annotated atoms (with insights array).\n\nGoals\n1. Exact edges: keep "shared label" edges (weight = min weight ≥ 0.7).\n2. Inference edges: create "inferred_<type>" edge when two atoms have semantically related insights (e.g., "login friction" ≈ "wrong password\"); weight = average of the two insight weights, threshold ≥ 0.75.\n3. Auto-themes: group atoms into named themes (≤ 3 words) if ≥ 3 atoms share dominant insight patterns.\n4. Auto-journey: create lightweight "as-is" journey by ordering atoms chronologically and tagging each step with dominant pain + emotion.\n\nOutput JSON:\n{\n  "nodes": [...],\n  "edges": [...],\n  "clusters": {...},\n  "themes": [\n    {\"name\": \"login friction\", \"atoms\": [...], \"dominant_insights\": {\"pain\": \"login friction\", \"emotion\": \"frustration\"}, \"pain_score\": 0.95}\n  ],\n  "journey": [\n    {\"step\": \"login attempt\", \"pain\": \"wrong password\", \"emotion\": \"frustration\", \"atoms\": [...]}\n  ],\n  "facets": [...]\n}\n\nRules\n- Exact edge: same label, both weights ≥ 0.7.  \n- Inference edge: semantic similarity ≥ 0.75.  \n- Theme: ≥ 3 atoms.  \n- Journey: keep chronological order.  \n\nReturn strict JSON only."""
 
 @app.post("/graph")
 async def build_graph(atoms: list[dict], filename: str):
@@ -357,3 +371,29 @@ async def delete_project(filename: str):
             os.remove(path)
 
     return {"ok": True}
+
+# --- Theme Clustering Prompt and Endpoint ---
+THEME_CLUSTER_PROMPT = '''You are a UX research theme clustering assistant.\n\nInput: a list of annotated atoms, each with speaker, text, insights, and tags.\n\nYour task:\n- Cluster the atoms into 3-8 high-level themes.\n- Each theme should have:\n  - a short, descriptive name (≤4 words)\n  - a 1-2 sentence summary\n  - a list of atom IDs belonging to the theme\n- Do not create overlapping themes.\n- Every atom must belong to exactly one theme.\n- Use only the information in the atoms and their annotations.\n\nReturn strict JSON:\n[\n  {\n    "name": "Theme name",\n    "summary": "Short summary of the theme.",\n    "atom_ids": ["uuid1", "uuid2", ...]\n  },\n  ...\n]\n\nHere are the annotated atoms:\n{atoms}\n'''
+
+@app.post("/themes/initial")
+async def generate_initial_themes(atoms: list[dict]):
+    prompt = THEME_CLUSTER_PROMPT.replace("{atoms}", json.dumps(atoms, ensure_ascii=False))
+    try:
+        response = gemini_model.generate_content(prompt)
+        raw = response.text.strip()
+
+        # Debug output
+        print("🧠 GEMINI RAW RESPONSE (Themer V1):")
+        print(repr(raw))
+
+        # Clean all ```json ... ``` wrappers no matter how they're placed
+        if raw.startswith("```json"):
+            raw = raw[len("```json"):].strip()
+        if raw.endswith("```"):
+            raw = raw[:-3].strip()
+
+        themes = json.loads(raw)
+        return themes
+    except Exception as e:
+        print("Theme clustering error:", e)
+        return []

@@ -1,29 +1,50 @@
+import { useEffect, useRef } from "react";
+import ForceGraph2D from "react-force-graph-2d";
+import { useGlobalStore } from "./store";
 import "./GraphStage.css";
 
-export default function GraphStage({ graph }) {
-  if (!graph || !graph.nodes) return <p>No graph yet</p>;
+export default function GraphStage() {
+  const graphRef = useRef();
+  const selectedFile = useGlobalStore((state) => state.selectedFile);
+  const graph = useGlobalStore((state) =>
+    selectedFile ? state.graph[selectedFile] : null
+  );
+
+  useEffect(() => {
+    if (!graphRef.current || !graph) return;
+    graphRef.current.d3Force("charge").strength(-120);
+    graphRef.current.d3Force("link").distance(160);
+  }, [graph]);
+
+  if (!graph || !graph.nodes?.length) {
+    return <div className="p-8 text-center text-gray-500">No graph yet</div>;
+  }
+
   return (
-    <section className="graph-stage">
-      <h2>Research Graph</h2>
-      <div className="graph-scroll">
-        <h3>Nodes ({graph.nodes.length})</h3>
-        <ul>
-          {graph.nodes.map((n) => (
-            <li key={n.id}>{n.speaker}: {n.text.slice(0, 60)}…</li>
-          ))}
-        </ul>
-        <h3>Edges ({graph.edges.length})</h3>
-        <ul>
-          {graph.edges.map((e) => (
-            <li key={e.source + e.target}>
-              {e.source} → {e.target} ({e.type}: {e.label})
-            </li>
-          ))}
-        </ul>
-        {graph.edges.length === 0 && graph.edges_note && (
-          <p className="empty-note">{graph.edges_note}</p>
-        )}
-      </div>
-    </section>
+    <div className="w-full h-screen">
+      <ForceGraph2D
+        ref={graphRef}
+        graphData={graph}
+        nodeLabel={(node) => node.text || node.id}
+        nodeAutoColorBy="source_file"
+        nodeCanvasObject={(node, ctx, globalScale) => {
+          const label =
+            node.text.slice(0, 60) +
+            (node.text.length > 60 ? "..." : "");
+          const fontSize = 12 / globalScale;
+          ctx.font = `${fontSize}px Inter`;
+          ctx.fillStyle = node.color || "white";
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI, false);
+          ctx.fill();
+          ctx.fillStyle = "#ddd";
+          ctx.fillText(label, node.x + 8, node.y + 3);
+        }}
+        linkColor={() => "#888"}
+        linkWidth={1}
+        width={window.innerWidth - 300}
+        height={window.innerHeight - 50}
+      />
+    </div>
   );
 }

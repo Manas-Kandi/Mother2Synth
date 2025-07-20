@@ -1,28 +1,24 @@
 import "./AtomsStage.css";
 
-export default function AtomsStage({ atoms }) {
+export default function AtomsStage({ file }) {
+  if (!file || !file.atoms || file.atoms.length === 0) {
+    return <p className="loading">No atoms for this document yet.</p>;
+  }
+
   return (
     <section className="atoms-stage">
-      <div className="atoms-container">
-        <div className="atoms-content">
-          {atoms.map((atom, i) => (
-            <div key={i} className="atom-card">
-              <header className="atom-header">
-                <span className="speaker">{atom.speaker}</span>
-                {/* Optional: Add a timestamp or identifier */}
-                {/* <span className="timestamp">{formatTimestamp(atom.timestamp)}</span> */}
-              </header>
-              <p className="atom-text">{atom.text}</p>
+      <h2 className="atoms-header">{file.name}</h2>
+      <div className="atoms-scroll">
+        {file.atoms.map((atom, i) => (
+          <div key={atom.id || i} className="atom-card">
+            <div className="atom-meta">
+              <span className="speaker-label">{atom.speaker}</span>
+              <span className="source-label">{atom.source_file}</span>
             </div>
-          ))}
-        </div>
+            <p className="atom-text">{atom.text}</p>
+          </div>
+        ))}
       </div>
     </section>
   );
-}
-
-// Optional: Helper function to format timestamps
-function formatTimestamp(timestamp) {
-  const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return new Date(timestamp).toLocaleDateString(undefined, options);
 }
