@@ -61,51 +61,137 @@ Return only the cleaned, speaker-separated transcript.
 """
 
 def run_llm_normalizer(raw_text: str) -> str:
+    # If text is extremely long, truncate with warning
+    if len(raw_text) > 50000:
+        print(f"\u26A0\uFE0F Text very long ({len(raw_text)} chars), truncating to 50k")
+        raw_text = raw_text[:50000] + "\n\n[... text truncated due to length ...]"
     prompt = LLM_PROMPT.replace("{raw_text}", raw_text)
-    try:
-        response = gemini_model.generate_content(prompt)
-        return response.text.strip()
-    except Exception as e:
-        print(f"Error from Gemini: {e}")
-        return "[LLM error]"
+    for attempt in range(2):
+        try:
+            print(f"\U0001F9E0 Normalizing attempt {attempt + 1}")
+            response = gemini_model.generate_content(prompt)
+            result = response.text.strip()
+            if result and len(result) > 10:  # Basic sanity check
+                print(f"\u2705 Normalization successful ({len(result)} chars)")
+                return result
+            else:
+                raise ValueError("Normalizer returned empty or very short result")
+        except Exception as e:
+            print(f"\u274C Normalization error (attempt {attempt + 1}): {e}")
+            if attempt < 1:  # Try once more
+                time.sleep(1)
+                continue
+    print("\U0001F6AB Normalization failed, returning raw text")
+    return f"[Normalization failed - returning raw text]\n\n{raw_text}"
 
 ATOMISER_PROMPT = """You are an “Atomic Evidence Splitter”.\n\nInput: cleaned transcript  \nOutput: JSON list of atoms.\n\nSchema per atom:\n{\n  \"id\": \"<uuid>\",\n  \"speaker\": \"<speaker>\",\n  \"text\": \"<1–3 sentence idea>\",\n  \"context\": \"<±2 sentences for context>\",\n  \"entities\": {\n    \"objects\": [],\n    \"tasks\": [],\n    \"emotions\": []\n  },\n  \"confidence\": \"high|medium|low\"\n}\n\nRules:\n- Cut only at natural idea boundaries.  \n- Never merge speakers.  \n- Entities must appear verbatim in text.  \n- If unsure, mark confidence=low and shorten text.  \n\nReturn ONLY valid JSON. No commentary.\n\nTranscript:\n{transcript}\n"""
 
-def run_llm_atomiser(clean_text: str, source_file: str) -> list[dict]:
-    prompt = ATOMISER_PROMPT.replace("{transcript}", clean_text)
+def fix_json_syntax(raw_json: str) -> str:
+    """Try to fix common JSON syntax issues"""
+    # Remove trailing commas before closing brackets
+    raw_json = re.sub(r',([\s]*[}\]])', r'\1', raw_json)
+    # (Optional) Add more fixes as needed
+    return raw_json
+
+def chunk_and_atomise(clean_text: str, source_file: str, chunk_size: int = 8000) -> list[dict]:
+    """Split long text into chunks and atomise each separately"""
+    lines = clean_text.split('\n')
+    chunks = []
+    current_chunk = ""
+    for line in lines:
+        if len(current_chunk + line) > chunk_size and current_chunk:
+            chunks.append(current_chunk.strip())
+            current_chunk = line + '\n'
+        else:
+            current_chunk += line + '\n'
+    if current_chunk.strip():
+        chunks.append(current_chunk.strip())
+    print(f"\U0001F4E6 Split into {len(chunks)} chunks")
+    all_atoms = []
+    for i, chunk in enumerate(chunks):
+        print(f"\U0001F501 Processing chunk {i + 1}/{len(chunks)}")
+        chunk_atoms = run_llm_atomiser_single(chunk, source_file, i + 1)
+        all_atoms.extend(chunk_atoms)
+        time.sleep(0.5)  # Brief pause between chunks
+    return all_atoms
+
+def run_llm_atomiser_single(chunk_text: str, source_file: str, chunk_num: int) -> list[dict]:
+    """Atomise a single chunk - simplified version without recursion"""
+    prompt = ATOMISER_PROMPT.replace("{transcript}", chunk_text)
     try:
         response = gemini_model.generate_content(prompt)
         raw = response.text.strip()
-
-        print("🧠 GEMINI RAW (Atomiser):")
-        print(repr(raw))
-
-        # Clean up markdown fences
-        raw = raw.replace("```json", "").replace("```", "").strip()
-
+        # Clean up
+        raw = re.sub(r'^```(?:json)?', '', raw, flags=re.MULTILINE)
+        raw = re.sub(r'```$', '', raw, flags=re.MULTILINE)
+        raw = raw.strip()
+        raw = fix_json_syntax(raw)
         atoms = json.loads(raw)
-
-        # Validate and enrich atoms
-        if not isinstance(atoms, list):
-            raise ValueError("Atomiser: Expected list")
-
-        for atom in atoms:
-            atom.setdefault("id", str(uuid4()))
-            atom["source_file"] = source_file  # 💡 Attach source info
-
-        return atoms
-
+        if isinstance(atoms, list):
+            for atom in atoms:
+                atom.setdefault("id", str(uuid4()))
+                atom["source_file"] = f"{source_file} (chunk {chunk_num})"
+            return atoms
     except Exception as e:
-        print("Atomiser error:", e)
-        return [{
-            "id": str(uuid4()),
-            "speaker": "ERROR",
-            "text": f"[Atomiser failed: {e}]",
-            "context": "",
-            "entities": {"objects": [], "tasks": [], "emotions": []},
-            "confidence": "low",
-            "source_file": source_file
-        }]
+        print(f"Chunk {chunk_num} failed: {e}")
+    # Return empty list for failed chunks
+    return []
+
+def run_llm_atomiser(clean_text: str, source_file: str) -> list[dict]:
+    # If text is too long, chunk it
+    if len(clean_text) > 15000:  # Adjust threshold as needed
+        print(f"\U0001F4CF Text too long ({len(clean_text)} chars), chunking...")
+        return chunk_and_atomise(clean_text, source_file)
+    prompt = ATOMISER_PROMPT.replace("{transcript}", clean_text)
+    # Try multiple times with different strategies
+    for attempt in range(3):
+        try:
+            response = gemini_model.generate_content(prompt)
+            raw = response.text.strip()
+            print(f"\U0001F9E0 GEMINI RAW (Atomiser, attempt {attempt + 1}):")
+            print(repr(raw[:500]) + "..." if len(raw) > 500 else repr(raw))
+            # Clean up markdown fences more aggressively
+            raw = re.sub(r'^```(?:json)?', '', raw, flags=re.MULTILINE)
+            raw = re.sub(r'```$', '', raw, flags=re.MULTILINE)
+            raw = raw.strip()
+            # Try to fix common JSON issues
+            raw = fix_json_syntax(raw)
+            atoms = json.loads(raw)
+            # Validate and enrich atoms
+            if not isinstance(atoms, list):
+                raise ValueError("Expected list of atoms")
+            valid_atoms = []
+            for atom in atoms:
+                if isinstance(atom, dict) and "text" in atom:
+                    atom.setdefault("id", str(uuid4()))
+                    atom["source_file"] = source_file
+                    valid_atoms.append(atom)
+            if valid_atoms:
+                print(f"\u2705 Successfully parsed {len(valid_atoms)} atoms")
+                return valid_atoms
+            else:
+                raise ValueError("No valid atoms found")
+        except json.JSONDecodeError as e:
+            print(f"\u274C JSON parse error (attempt {attempt + 1}): {e}")
+            if attempt < 2:  # Try again with more aggressive prompt
+                prompt = ATOMISER_PROMPT.replace("{transcript}", clean_text[:10000])  # Truncate
+                continue
+        except Exception as e:
+            print(f"\u274C Other error (attempt {attempt + 1}): {e}")
+            if attempt < 2:
+                time.sleep(1)  # Brief pause before retry
+                continue
+    # All attempts failed, return error atom
+    print("\U0001F6AB All atomisation attempts failed, returning error atom")
+    return [{
+        "id": str(uuid4()),
+        "speaker": "ERROR",
+        "text": f"[Atomiser failed after 3 attempts. Text length: {len(clean_text)} chars. Last error: JSON parsing failed]",
+        "context": "",
+        "entities": {"objects": [], "tasks": [], "emotions": []},
+        "confidence": "low",
+        "source_file": source_file
+    }]
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     doc = fitz.open(pdf_path)

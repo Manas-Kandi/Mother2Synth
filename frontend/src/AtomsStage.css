@@ -1,49 +1,280 @@
 .atoms-stage {
-  padding: 2rem 3rem;
+  height: 100vh;
   background: var(--bg);
   color: var(--text);
-  height: 100%;
   overflow: hidden;
 }
 
-.atoms-header {
-  font-size: 1rem;
-  color: var(--muted);
-  margin-bottom: 1rem;
-  text-transform: uppercase;
+.atoms-document {
+  height: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  overflow-y: auto;
+  position: relative;
 }
 
-.atoms-scroll {
-  max-height: 80vh;
-  overflow-y: auto;
+/* Document Header */
+.document-header {
+  margin-bottom: 3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 1.5rem;
+}
+
+.document-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.025em;
+}
+
+.document-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.75rem 0;
+  font-weight: 400;
+}
+
+.document-meta {
+  font-size: 0.875rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* Atoms Content */
+.atoms-content {
+  position: relative;
+}
+
+.atoms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Atom Cards */
+.atom-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: all 0.3s var(--ease);
+  position: relative;
+  overflow: hidden;
+}
+
+.atom-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+}
+
+.atom-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(10, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.atom-card:hover::before {
+  opacity: 1;
+}
+
+/* Atom Header */
+.atom-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.speaker-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.speaker-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.speaker-dot.interviewer {
+  background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+}
+
+.speaker-dot.participant {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.speaker-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.atom-number {
+  font-size: 0.625rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* Atom Content */
+.atom-content {
+  margin-bottom: 1rem;
+}
+
+.atom-text {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text);
+  margin: 0;
+  word-wrap: break-word;
+}
+
+/* Atom Footer */
+.atom-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.source-file {
+  font-size: 0.625rem;
+  color: var(--muted);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* Speaker-specific styling */
+.atom-card.speaker-0:hover {
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.atom-card.speaker-1:hover {
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.atom-card.speaker-2:hover {
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+/* Empty State */
+.empty-state {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  gap: 1rem;
 }
 
-.atom-card {
-  background: #181818;
-  border-radius: 8px;
-  padding: 1rem;
-  font-size: 1rem;
-  line-height: 1.5;
-}
-
-.atom-meta {
-  display: flex;
-  justify-content: space-between;
+.empty-icon {
+  font-size: 4rem;
+  opacity: 0.3;
   margin-bottom: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
-.speaker-label {
+.empty-title {
+  font-size: 1.5rem;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--text);
+  margin: 0;
 }
 
-.source-label {
-  font-style: italic;
+.empty-text {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* Scrollbar */
+.atoms-document::-webkit-scrollbar {
+  width: 3px;
+}
+
+.atoms-document::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.atoms-document::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.atoms-document::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .atoms-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .atoms-document {
+    padding: 2rem 1rem;
+  }
+  
+  .document-title {
+    font-size: 1.5rem;
+  }
+  
+  .atom-card {
+    padding: 1rem;
+  }
+  
+  .atoms-grid {
+    gap: 0.75rem;
+  }
+}
+
+/* Subtle animations */
+.atom-card {
+  animation: fadeInUp 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+.atom-card:nth-child(1) { animation-delay: 0.05s; }
+.atom-card:nth-child(2) { animation-delay: 0.1s; }
+.atom-card:nth-child(3) { animation-delay: 0.15s; }
+.atom-card:nth-child(4) { animation-delay: 0.2s; }
+.atom-card:nth-child(5) { animation-delay: 0.25s; }
+.atom-card:nth-child(6) { animation-delay: 0.3s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
