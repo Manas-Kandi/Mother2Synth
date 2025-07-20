@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./TranscriptStage.css";
 
 export default function TranscriptStage({ file }) {
@@ -8,7 +8,76 @@ export default function TranscriptStage({ file }) {
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [commentPosition, setCommentPosition] = useState({ top: 0, exchangeId: null });
   const [highlightedText, setHighlightedText] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const documentRef = useRef(null);
+
+  // Load existing comments when file changes
+  useEffect(() => {
+    if (file?.name) {
+      loadComments();
+    }
+  }, [file?.name]);
+
+  const loadComments = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setComments(data.comments || {});
+      }
+    } catch (error) {
+      console.error('Failed to load comments:', error);
+    }
+  };
+
+  const saveComment = async (comment, exchangeId) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          exchangeId,
+          comment: {
+            ...comment,
+            author: 'Current User', // This would come from auth system
+            filename: file.name
+          }
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save comment');
+      }
+      
+      const result = await response.json();
+      return result.success;
+    } catch (error) {
+      console.error('Failed to save comment:', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const removeComment = async (exchangeId, commentId) => {
+    try {
+      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}/${commentId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete comment');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+      return false;
+    }
+  };
 
   if (!file || !file.cleaned) {
     return (
@@ -53,17 +122,19 @@ export default function TranscriptStage({ file }) {
     }
   };
 
-  const addComment = () => {
+  const addComment = async () => {
     if (commentInput.trim() && commentPosition.selectedText) {
       const commentId = Date.now();
       const newComment = {
         id: commentId,
         text: commentInput.trim(),
         selectedText: commentPosition.selectedText,
-        timestamp: new Date().toLocaleString(),
-        position: commentPosition.top
+        timestamp: new Date().toISOString(),
+        position: commentPosition.top,
+        exchangeIndex: commentPosition.exchangeId
       };
       
+      // Optimistically update UI
       setComments(prev => ({
         ...prev,
         [commentPosition.exchangeId]: [
@@ -72,8 +143,22 @@ export default function TranscriptStage({ file }) {
         ]
       }));
       
+      // Save to backend
+      const success = await saveComment(newComment, commentPosition.exchangeId);
+      
+      if (!success) {
+        // Revert on failure
+        setComments(prev => ({
+          ...prev,
+          [commentPosition.exchangeId]: prev[commentPosition.exchangeId].filter(c => c.id !== commentId)
+        }));
+        alert('Failed to save comment. Please try again.');
+        return;
+      }
+      
       setCommentInput("");
       setShowCommentBox(false);
+      setCommentPosition({ top: 0, exchangeId: null });
       window.getSelection().removeAllRanges();
     }
   };
@@ -86,11 +171,27 @@ export default function TranscriptStage({ file }) {
     });
   };
 
-  const deleteComment = (exchangeId, commentId) => {
+  const deleteComment = async (exchangeId, commentId) => {
+    // Optimistically update UI
+    const originalComments = comments[exchangeId];
     setComments(prev => ({
       ...prev,
       [exchangeId]: prev[exchangeId].filter(c => c.id !== commentId)
     }));
+    
+    // Remove from backend
+    const success = await removeComment(exchangeId, commentId);
+    
+    if (!success) {
+      // Revert on failure
+      setComments(prev => ({
+        ...prev,
+        [exchangeId]: originalComments
+      }));
+      alert('Failed to delete comment. Please try again.');
+      return;
+    }
+    
     if (activeComment === commentId) {
       setActiveComment(null);
       setHighlightedText(null);
@@ -100,6 +201,7 @@ export default function TranscriptStage({ file }) {
   const cancelComment = () => {
     setShowCommentBox(false);
     setCommentInput("");
+    setCommentPosition({ top: 0, exchangeId: null });
     window.getSelection().removeAllRanges();
   };
 
@@ -143,7 +245,6 @@ export default function TranscriptStage({ file }) {
                   <div 
                     className={`exchange-content ${isHighlighted ? 'highlighted' : ''}`}
                     onMouseUp={(e) => handleTextSelection(i, e)}
-                    data-highlighted-text={isHighlighted ? highlightedText.text : ''}
                   >
                     {block.text}
                   </div>
@@ -176,11 +277,11 @@ export default function TranscriptStage({ file }) {
                   Cancel
                 </button>
                 <button 
-                  className="add-btn"
+                  className={`add-btn ${isLoading ? 'loading' : ''}`}
                   onClick={addComment}
-                  disabled={!commentInput.trim()}
+                  disabled={!commentInput.trim() || isLoading}
                 >
-                  Comment
+                  {isLoading ? 'Saving...' : 'Comment'}
                 </button>
               </div>
             </div>
