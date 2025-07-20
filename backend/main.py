@@ -268,6 +268,8 @@ async def normalize_files():
 
 @app.get("/normalize/{filename}")
 async def normalize_file(filename: str):
+    if not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Must be a PDF file")
     cleaned_path = os.path.join(CLEANED_DIR, filename.replace(".pdf", ".txt"))
     if os.path.exists(cleaned_path):
         with open(cleaned_path, "r", encoding="utf-8") as f:
@@ -310,6 +312,27 @@ async def atomise_files():
 
     return atomised_output
 
+
+@app.get("/atomise/{filename}")
+async def atomise_file(filename: str):
+    if not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Must be a PDF file")
+    atoms_path = os.path.join(ATOMS_DIR, filename.replace(".pdf", ".json"))
+    if os.path.exists(atoms_path):
+        with open(atoms_path, "r", encoding="utf-8") as f:
+            return {"atoms": json.load(f)}
+    cleaned_path = os.path.join(CLEANED_DIR, filename.replace(".pdf", ".txt"))
+    if os.path.exists(cleaned_path):
+        with open(cleaned_path, "r", encoding="utf-8") as f:
+            clean_text = f.read()
+    else:
+        pdf_path = os.path.join(UPLOAD_DIR, filename)
+        full_text = extract_text_from_pdf(pdf_path)
+        clean_text = run_llm_normalizer(full_text)
+    atoms = run_llm_atomiser(clean_text, filename)
+    with open(atoms_path, "w", encoding="utf-8") as f:
+        json.dump(atoms, f, indent=2, ensure_ascii=False)
+    return {"atoms": atoms}
 
 ANNOTATOR_PROMPT = """You are a UX-insight extractor.\n\nReturn JSON:\n\n{\n  \"insights\": [\n    {\"type\": \"<meta-category>\", \"label\": \"<≤3 words>\", \"weight\": 0.0-1.0}\n  ],\n  \"tags\": [\"keyword1\", \"keyword2\"]\n}\n\nAllowed types & examples\npersona: mobile user | admin | new hire  \npain: login friction | hidden cost | broken flow  \nemotion: annoyance | anxiety | delight  \nroot_cause: validation bug | slow backend  \nimpact: task abandon | time lost  \ncontext: on-the-go | multitasking  \ndevice: Android | iPhone | desktop  \nchannel: web | app | phone call  \nfrequency: daily | weekly | first-time  \nseverity: blocker | minor | workaround exists\n\nRules\n- Emit 0-2 insights per type, ≤8 total  \n- weight = confidence 0-1  \n- labels verbatim when possible  \n- skip any you can’t ground\n\nQuote:\n{atom_text}\n"""
 

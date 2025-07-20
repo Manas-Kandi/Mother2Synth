@@ -41,15 +41,15 @@ export default function Shell() {
     for (const [i, file] of selectedFiles.entries()) {
       const filename = file.name;
 
-      setStatusMessage(`Cleaning ${filename} (${i+1}/${selectedFiles.length})...`);
-      const norm = await (await fetch(`http://localhost:8000/normalize/${encodeURIComponent(filename)}`)).json();
-      const cleaned = norm.content || "";
+      setStatusMessage(`Cleaning: ${filename} (${i+1}/${selectedFiles.length})`);
+      const normRes = await fetch(`http://localhost:8000/normalize/${encodeURIComponent(filename)}`);
+      const { content: cleaned } = await normRes.json();
 
-      setStatusMessage(`Atomizing ${filename} (${i+1}/${selectedFiles.length})...`);
-      const atomised = await (await fetch("http://localhost:8000/atomise")).json();
-      const atoms = atomised[filename] || [];
+      setStatusMessage(`Atomizing: ${filename} (${i+1}/${selectedFiles.length})`);
+      const atomRes = await fetch(`http://localhost:8000/atomise/${encodeURIComponent(filename)}`);
+      const { atoms } = await atomRes.json();
 
-      setStatusMessage(`Annotating ${filename} (${i+1}/${selectedFiles.length})...`);
+      setStatusMessage(`Annotating: ${filename} (${i+1}/${selectedFiles.length})...`);
       const annotated = await (
         await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}`, {
           method: "POST",
@@ -58,7 +58,7 @@ export default function Shell() {
         })
       ).json();
 
-      setStatusMessage(`Graphing ${filename} (${i+1}/${selectedFiles.length})...`);
+      setStatusMessage(`Graphing: ${filename} (${i+1}/${selectedFiles.length})...`);
       const graph = await (
         await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}`, {
           method: "POST",
