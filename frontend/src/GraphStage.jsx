@@ -71,6 +71,9 @@ export default function GraphStage({ file }) {
   const [speakerFilter, setSpeakerFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [layoutMode, setLayoutMode] = useState("force");
+  const [showMinimap, setShowMinimap] = useState(false);
+  const [hoverNode, setHoverNode] = useState(null);
   
   const enhanceGraphWithLLM = async (rawGraph) => {
     if (!rawGraph || !rawGraph.nodes) return null;
@@ -211,6 +214,14 @@ export default function GraphStage({ file }) {
     ctx.textBaseline = 'middle';
     ctx.fillStyle = node.nodeColor || '#00ffff';
     ctx.fillText(label, node.x, node.y);
+
+    if (selectedNode?.id === node.id || hoverNode?.id === node.id) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, 8 / globalScale, 0, 2 * Math.PI, false);
+      ctx.strokeStyle = '#ffff00';
+      ctx.lineWidth = 2 / globalScale;
+      ctx.stroke();
+    }
   };
 
   // Add effect to stabilize after initial load
@@ -222,6 +233,23 @@ export default function GraphStage({ file }) {
       }, 3000);
     }
   }, [filteredGraph]);
+
+  useEffect(() => {
+    if (!graphRef.current || !filteredGraph?.nodes) return;
+
+    if (layoutMode === 'force') {
+      filteredGraph.nodes.forEach(n => { delete n.fx; delete n.fy; });
+      graphRef.current.d3ReheatSimulation();
+    } else if (layoutMode === 'timeline') {
+      const speakers = Array.from(new Set(filteredGraph.nodes.map(n => n.speaker))).filter(Boolean);
+      filteredGraph.nodes.forEach((node, idx) => {
+        const yIdx = speakers.indexOf(node.speaker);
+        node.fx = idx * 40;
+        node.fy = yIdx * 60;
+      });
+      graphRef.current.d3ReheatSimulation();
+    }
+  }, [layoutMode, filteredGraph]);
 
   const getConnectedNodes = (nodeId) => {
     if (!filteredGraph) return [];
@@ -313,6 +341,25 @@ export default function GraphStage({ file }) {
               placeholder="Find text..."
             />
           </div>
+
+          <div className="filter-group">
+            <label className="filter-label">Layout</label>
+            <select
+              className="filter-select"
+              value={layoutMode}
+              onChange={(e) => setLayoutMode(e.target.value)}
+            >
+              <option value="force">Force</option>
+              <option value="timeline">Timeline</option>
+            </select>
+          </div>
+
+          <button
+            className="minimap-toggle"
+            onClick={() => setShowMinimap(v => !v)}
+          >
+            {showMinimap ? 'Hide Minimap' : 'Show Minimap'}
+          </button>
         </div>
         
         {file && (
@@ -352,32 +399,44 @@ export default function GraphStage({ file }) {
             graphData={filteredGraph}
             nodeLabel="text"
             nodeAutoColorBy="speaker"
-            linkDirectionalParticles={2}       // Fewer particles for cleaner look
+            linkDirectionalParticles={2}
             linkDirectionalArrowLength={4}
-            linkCurvature={0.1}                // Less curve for cleaner lines
+            linkCurvature={0.1}
             enableNodeDrag={true}
             enablePanInteraction={true}
             enableZoomInteraction={true}
             backgroundColor="#000000"
-            linkColor={() => '#00ffff'}
-            linkWidth={1}                      // Thinner links
+            linkColor={link => {
+              const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+              const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+              if (selectedNode && (sourceId === selectedNode.id || targetId === selectedNode.id)) return '#ffff00';
+              if (hoverNode && (sourceId === hoverNode.id || targetId === hoverNode.id)) return '#ffff00';
+              return '#00ffff';
+            }}
+            linkWidth={link => {
+              const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+              const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+              if (selectedNode && (sourceId === selectedNode.id || targetId === selectedNode.id)) return 2;
+              if (hoverNode && (sourceId === hoverNode.id || targetId === hoverNode.id)) return 2;
+              return 1;
+            }}
             linkOpacity={0.6}
-            // Physics settings for stability
-            d3AlphaDecay={0.02}               // Slower cooling
-            d3AlphaMin={0.001}                // Don't stop completely
-            d3VelocityDecay={0.3}             // More dampening
-            linkDistance={80}                 // Consistent link distance
-            linkStrength={1}                  // Strong links
+            d3AlphaDecay={0.02}
+            d3AlphaMin={0.001}
+            d3VelocityDecay={0.3}
+            linkDistance={80}
+            linkStrength={1}
             nodeVal={node => {
               const connections = filteredGraph.links.filter(link => {
                 const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
                 const targetId = typeof link.target === 'object' ? link.target.id : link.target;
                 return sourceId === node.id || targetId === node.id;
               }).length;
-              return Math.max(8, connections * 3); // Bigger nodes
+              return Math.max(8, connections * 3);
             }}
             nodeCanvasObject={renderNode}
             onNodeClick={handleNodeClick}
+            onNodeHover={node => setHoverNode(node || null)}
           />
         ) : (
           <div style={{ 
@@ -401,6 +460,27 @@ export default function GraphStage({ file }) {
             fontSize: '0.9rem'
           }}>
             Enhancing graph...
+          </div>
+        )}
+        {showMinimap && filteredGraph && (
+          <div className="minimap">
+            <ForceGraph2D
+              graphData={filteredGraph}
+              width={200}
+              height={150}
+              enableZoomInteraction={false}
+              enablePanInteraction={false}
+              enableNodeDrag={false}
+              backgroundColor="#000"
+              nodeColor={node => node.nodeColor || '#00ffff'}
+              linkColor={() => '#00ffff'}
+              nodeCanvasObject={(node, ctx) => {
+                ctx.fillStyle = node.nodeColor || '#00ffff';
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 2, 0, 2 * Math.PI, false);
+                ctx.fill();
+              }}
+            />
           </div>
         )}
       </div>
