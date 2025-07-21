@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .paths import ensure_dirs
-from .routes import upload, atoms, graph, comments
+from paths import ensure_dirs
+from routes import upload, atoms, graph, comments
 
 ensure_dirs()
 

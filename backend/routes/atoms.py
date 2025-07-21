@@ -7,9 +7,9 @@ from typing import List
 
 from fastapi import APIRouter, HTTPException
 
-from ..llm import gemini_model
-from ..paths import ATOMS_DIR, CLEANED_DIR, UPLOAD_DIR, ANNOTATED_DIR
-from .upload import extract_text_from_pdf, run_llm_normalizer
+from llm import gemini_model
+from paths import ATOMS_DIR, CLEANED_DIR, UPLOAD_DIR, ANNOTATED_DIR
+from routes.upload import extract_text_from_pdf, run_llm_normalizer
 
 router = APIRouter()
 

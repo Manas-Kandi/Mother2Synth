@@ -6,8 +6,8 @@ import fitz
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 
-from ..llm import gemini_model
-from ..paths import UPLOAD_DIR, CLEANED_DIR, ATOMS_DIR, ANNOTATED_DIR, GRAPH_DIR
+from llm import gemini_model
+from paths import UPLOAD_DIR, CLEANED_DIR, ATOMS_DIR, ANNOTATED_DIR, GRAPH_DIR
 
 router = APIRouter()
 

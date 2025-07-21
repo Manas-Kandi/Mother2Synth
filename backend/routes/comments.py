@@ -6,7 +6,7 @@ from typing import Dict, Optional, List
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ..paths import COMMENTS_DIR
+from paths import COMMENTS_DIR
 
 router = APIRouter()
 

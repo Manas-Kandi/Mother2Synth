@@ -4,8 +4,8 @@ from typing import List
 
 from fastapi import APIRouter
 
-from ..llm import gemini_model
-from ..paths import GRAPH_DIR
+from llm import gemini_model
+from paths import GRAPH_DIR
 
 router = APIRouter()
 
