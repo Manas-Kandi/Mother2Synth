@@ -61,6 +61,7 @@ export default function ComprehensiveShell() {
     setStatusMessage("Processing files...");
 
     const updated = [];
+    let encounteredError = false;
 
     for (let i = 0; i < selectedFiles.length; i++) {
       try {
@@ -111,10 +112,10 @@ export default function ComprehensiveShell() {
 
         // Step 5: Create board
         setStatusMessage(`Creating board: ${filename} (${i+1}/${selectedFiles.length})`);
-        const boardRes = await fetch(`http://localhost:8000/board/create`, {
+        const boardRes = await fetch(`http://localhost:8000/board/create?project_slug=${encodeURIComponent(slug)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ atoms: annotated, themes: graph.themes, project_slug: slug, filename }),
+          body: JSON.stringify({ atoms: annotated, themes: graph.themes, filename }),
         });
         if (!boardRes.ok) throw new Error(`Board creation failed: ${boardRes.statusText}`);
         const board = await boardRes.json();
@@ -131,22 +132,14 @@ export default function ComprehensiveShell() {
         });
       } catch (error) {
         console.error(`Error processing ${selectedFiles[i]?.name}:`, error);
+        encounteredError = true;
+        setStatusMessage(`Error processing ${selectedFiles[i]?.name || 'unknown'}: ${error.message}`);
         updated.push({
           name: selectedFiles[i]?.name || 'unknown',
           status: 'error',
           error: error.message
         });
       }
-
-      updated.push({ 
-        name: filename, 
-        cleaned, 
-        atoms, 
-        annotated, 
-        graph,
-        board,
-        project_slug: slug
-      });
     }
 
     const newFiles = [...files, ...updated];
@@ -154,7 +147,9 @@ export default function ComprehensiveShell() {
     setActiveFileIndex(newFiles.length - updated.length);
     setSelectedFile(newFiles[newFiles.length - updated.length]?.name || null);
     setStage(STAGES.TRANSCRIPT);
-    setStatusMessage("Processing complete!");
+    if (!encounteredError) {
+      setStatusMessage("Processing complete!");
+    }
     // Debug: log file structure after processing
     console.log("[DEBUG] Processed files:", newFiles);
   }
