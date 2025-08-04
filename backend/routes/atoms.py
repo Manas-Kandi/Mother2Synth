@@ -1,4 +1,3 @@
-import os
 import json
 import re
 import time
@@ -8,7 +7,6 @@ from typing import List
 from fastapi import APIRouter, HTTPException
 
 from llm import gemini_model
-from paths import ATOMS_DIR, CLEANED_DIR, UPLOAD_DIR, ANNOTATED_DIR
 from routes.upload import extract_text_from_pdf, run_llm_normalizer
 
 router = APIRouter()
@@ -138,14 +136,15 @@ def annotate_atom(text: str) -> dict:
 
 @router.get("/atomise/{filename}")
 async def atomise_file(filename: str, project_slug: str = None):
-    from dropzone import dropzone_manager
+    from dropzone import DropZoneManager
     if not filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Must be a PDF file")
     if not project_slug:
         raise HTTPException(status_code=400, detail="project_slug query param required")
-    atoms_path = dropzone_manager.get_project_path(project_slug, "atoms") / filename.replace(".pdf", ".json")
-    cleaned_path = dropzone_manager.get_project_path(project_slug, "cleaned") / filename.replace(".pdf", ".txt")
-    raw_path = dropzone_manager.get_project_path(project_slug, "raw") / filename
+    dz = DropZoneManager(project_slug)
+    atoms_path = dz.get_path("atoms", filename.replace(".pdf", ".json"))
+    cleaned_path = dz.get_path("cleaned", filename.replace(".pdf", ".txt"))
+    raw_path = dz.get_path("raw", filename)
     print(f"[DropZone] Atomise: atoms_path={atoms_path}, cleaned_path={cleaned_path}, raw_path={raw_path}")
     if atoms_path.exists():
         with open(atoms_path, "r", encoding="utf-8") as f:
@@ -169,10 +168,11 @@ async def atomise_file(filename: str, project_slug: str = None):
 @router.post("/annotate")
 async def annotate_atoms(atoms: List[dict], filename: str, project_slug: str = None):
     """Annotate atoms and cache the results in DropZone."""
-    from dropzone import dropzone_manager
+    from dropzone import DropZoneManager
     if not project_slug:
         raise HTTPException(status_code=400, detail="project_slug query param required")
-    annotated_path = dropzone_manager.get_project_path(project_slug, "annotated") / filename.replace(".pdf", ".json")
+    dz = DropZoneManager(project_slug)
+    annotated_path = dz.get_path("annotated", filename.replace(".pdf", ".json"))
     print(f"[DropZone] Annotate: annotated_path={annotated_path}")
     if annotated_path.exists():
         with open(annotated_path, "r", encoding="utf-8") as f:
