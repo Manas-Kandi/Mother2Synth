@@ -1,11 +1,9 @@
-import os
 import json
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from llm import gemini_model
-from paths import GRAPH_DIR
 
 router = APIRouter()
 
@@ -21,10 +19,11 @@ def find_shared_insights(node1: dict, node2: dict) -> List[tuple]:
 
 @router.post("/graph")
 async def build_graph(atoms: List[dict], filename: str, project_slug: str = None):
-    from dropzone import dropzone_manager
+    from dropzone import DropZoneManager
     if not project_slug:
         raise HTTPException(status_code=400, detail="project_slug query param required")
-    graph_path = dropzone_manager.get_project_path(project_slug, "graphs") / filename.replace(".pdf", ".json")
+    dz = DropZoneManager(project_slug)
+    graph_path = dz.get_path("graphs", filename.replace(".pdf", ".json"))
     print(f"[DropZone] Graph: graph_path={graph_path}")
     if graph_path.exists():
         with open(graph_path, "r", encoding="utf-8") as f:
