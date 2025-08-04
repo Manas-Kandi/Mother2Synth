@@ -58,24 +58,28 @@ async def build_graph(request: Request):
 async def run_quality_validation(request: Request):
     """Run comprehensive quality validation"""
     filename = request.query_params.get("filename")
-    project_slug = request.query_params.get("project")
-    
+    project_slug = request.query_params.get("project_slug")
+
     if not filename or not project_slug:
-        raise HTTPException(status_code=400, detail="filename and project query params required")
+        raise HTTPException(status_code=400, detail="filename and project_slug query params required")
     
     # Load required data
     themes_path = f"/DropZone/{project_slug}/graphs/{filename.replace('.pdf', '_themes.json')}"
     atoms_path = f"/DropZone/{project_slug}/atoms/{filename.replace('.pdf', '_atoms.json')}"
     insights_path = f"/DropZone/{project_slug}/graphs/{filename.replace('.pdf', '_insights.json')}"
     board_path = f"/DropZone/{project_slug}/boards/{filename.replace('.pdf', '_board.json')}"
-    
+
     try:
+        print(f"Reading themes file: {themes_path}")
         with open(themes_path, 'r') as f:
             themes = json.load(f)
+        print(f"Reading atoms file: {atoms_path}")
         with open(atoms_path, 'r') as f:
             atoms = json.load(f)
+        print(f"Reading insights file: {insights_path}")
         with open(insights_path, 'r') as f:
             insights = json.load(f)
+        print(f"Reading board file: {board_path}")
         with open(board_path, 'r') as f:
             board_data = json.load(f)
     except FileNotFoundError as e:
