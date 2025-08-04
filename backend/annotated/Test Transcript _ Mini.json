@@ -1,0 +1,479 @@
+[
+  {
+    "id": "18f5a7c0-d0e3-4b62-a5e2-2e8d3b1f5a9e",
+    "speaker": "SPEAKER 1",
+    "text": "I usually go through the app but not always sometimes I just use the website if I'm already on my computer.",
+    "context": "INTERVIEWER: okay and when you log in what usually happens?",
+    "entities": {
+      "objects": [
+        "app",
+        "website",
+        "computer"
+      ],
+      "tasks": [
+        "go through",
+        "use"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf",
+    "insights": [
+      {
+        "type": "channel",
+        "label": "app",
+        "weight": 1.0
+      },
+      {
+        "type": "channel",
+        "label": "website",
+        "weight": 0.9
+      },
+      {
+        "type": "device",
+        "label": "mobile",
+        "weight": 1.0
+      },
+      {
+        "type": "device",
+        "label": "desktop",
+        "weight": 1.0
+      },
+      {
+        "type": "context",
+        "label": "device-dependent",
+        "weight": 0.9
+      }
+    ],
+    "tags": [
+      "multi-channel",
+      "cross-device",
+      "user preference",
+      "device choice"
+    ]
+  },
+  {
+    "id": "2c6b9e1a-4d7f-4c8d-8a1e-0f3b7c9e2a5d",
+    "speaker": "SPEAKER 1",
+    "text": "Sometimes it’s fine but other times it says wrong password even though I KNOW it’s not wrong like I literally copy paste it from my notes.",
+    "context": "INTERVIEWER: okay and when you log in what usually happens? INTERVIEWER: got it—",
+    "entities": {
+      "objects": [
+        "password",
+        "notes"
+      ],
+      "tasks": [
+        "copy paste"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf",
+    "insights": [
+      {
+        "type": "pain",
+        "label": "wrong password",
+        "weight": 1.0
+      },
+      {
+        "type": "emotion",
+        "label": "annoyance",
+        "weight": 0.9
+      },
+      {
+        "type": "root_cause",
+        "label": "validation bug",
+        "weight": 0.9
+      },
+      {
+        "type": "impact",
+        "label": "login failure",
+        "weight": 1.0
+      },
+      {
+        "type": "severity",
+        "label": "blocker",
+        "weight": 0.9
+      },
+      {
+        "type": "context",
+        "label": "login attempt",
+        "weight": 1.0
+      },
+      {
+        "type": "frequency",
+        "label": "intermittent",
+        "weight": 1.0
+      }
+    ],
+    "tags": [
+      "password",
+      "login",
+      "intermittent",
+      "copy paste"
+    ]
+  },
+  {
+    "id": "3e8a0f2b-5d9c-4f1e-9a2b-1c4d6e7f8a9b",
+    "speaker": "SPEAKER 1",
+    "text": "I try the reset thing but then no email comes and I’m like ?? hello??",
+    "context": "INTERVIEWER: got it— SPEAKER 1: sometimes it works but not consistently.",
+    "entities": {
+      "objects": [
+        "reset thing",
+        "email"
+      ],
+      "tasks": [
+        "try",
+        "comes"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf",
+    "insights": [
+      {
+        "type": "pain",
+        "label": "no email",
+        "weight": 0.95
+      },
+      {
+        "type": "pain",
+        "label": "failed reset",
+        "weight": 0.9
+      },
+      {
+        "type": "emotion",
+        "label": "confusion",
+        "weight": 0.95
+      },
+      {
+        "type": "emotion",
+        "label": "frustration",
+        "weight": 0.9
+      },
+      {
+        "type": "root_cause",
+        "label": "email delivery issue",
+        "weight": 0.85
+      },
+      {
+        "type": "impact",
+        "label": "task stalled",
+        "weight": 0.9
+      },
+      {
+        "type": "context",
+        "label": "account recovery",
+        "weight": 0.85
+      }
+    ],
+    "tags": [
+      "reset",
+      "email",
+      "recovery",
+      "stuck"
+    ]
+  },
+  {
+    "id": "4a1c5d7f-6b8e-4a9c-7e2f-0d1a3b5c6e8f",
+    "speaker": "SPEAKER 1",
+    "text": "Sometimes it works but not consistently.",
+    "context": "SPEAKER 1: I try the reset thing but then no email comes and I’m like ?? hello?? INTERVIEWER: right, and how does that affect your work or whatever?",
+    "entities": {
+      "objects": [],
+      "tasks": [
+        "works"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf",
+    "insights": [
+      {
+        "type": "pain",
+        "label": "unreliable",
+        "weight": 0.9
+      },
+      {
+        "type": "emotion",
+        "label": "annoyance",
+        "weight": 0.7
+      },
+      {
+        "type": "impact",
+        "label": "lack of trust",
+        "weight": 0.8
+      },
+      {
+        "type": "frequency",
+        "label": "intermittent",
+        "weight": 0.9
+      },
+      {
+        "type": "severity",
+        "label": "quality issue",
+        "weight": 0.8
+      }
+    ],
+    "tags": [
+      "inconsistency",
+      "reliability",
+      "intermittent"
+    ]
+  },
+  {
+    "id": "5f3d0c9b-7e1a-4b2c-8d3f-1a0e2b4c5d6f",
+    "speaker": "SPEAKER 1",
+    "text": "I just give up usually like I don’t have time to deal with that.",
+    "context": "INTERVIEWER: right, and how does that affect your work or whatever? SPEAKER 1: Sometimes the site freezes too or it just doesn’t click when you press stuff, like it lags and I don’t know if it went through or not.",
+    "entities": {
+      "objects": [],
+      "tasks": [
+        "give up",
+        "deal with"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf",
+    "insights": [
+      {
+        "type": "pain",
+        "label": "time constraint",
+        "weight": 1.0
+      },
+      {
+        "type": "pain",
+        "label": "high effort",
+        "weight": 0.8
+      },
+      {
+        "type": "impact",
+        "label": "task abandonment",
+        "weight": 1.0
+      },
+      {
+        "type": "frequency",
+        "label": "usually",
+        "weight": 1.0
+      },
+      {
+        "type": "emotion",
+        "label": "resignation",
+        "weight": 0.9
+      },
+      {
+        "type": "severity",
+        "label": "blocker",
+        "weight": 0.9
+      },
+      {
+        "type": "persona",
+        "label": "time-strapped user",
+        "weight": 0.9
+      }
+    ],
+    "tags": [
+      "give up",
+      "time",
+      "friction",
+      "abandonment"
+    ]
+  },
+  {
+    "id": "6d9e1c2b-8a3f-4e5c-9f6b-2d0c1a3b4e5f",
+    "speaker": "SPEAKER 1",
+    "text": "Sometimes the site freezes too or it just doesn’t click when you press stuff, like it lags and I don’t know if it went through or not.",
+    "context": "SPEAKER 1: I just give up usually like I don’t have time to deal with that. INTERVIEWER: ok and that happens like often?",
+    "entities": {
+      "objects": [
+        "site",
+        "stuff"
+      ],
+      "tasks": [
+        "freezes",
+        "click",
+        "press",
+        "lags"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf",
+    "insights": [
+      {
+        "type": "pain",
+        "label": "site freezes",
+        "weight": 0.9
+      },
+      {
+        "type": "pain",
+        "label": "doesn't click",
+        "weight": 0.9
+      },
+      {
+        "type": "emotion",
+        "label": "uncertainty",
+        "weight": 0.8
+      },
+      {
+        "type": "root_cause",
+        "label": "lags",
+        "weight": 0.9
+      },
+      {
+        "type": "impact",
+        "label": "lack of feedback",
+        "weight": 0.8
+      },
+      {
+        "type": "impact",
+        "label": "time lost",
+        "weight": 0.7
+      }
+    ],
+    "tags": [
+      "freezing",
+      "lagging",
+      "unresponsive",
+      "feedback",
+      "uncertainty"
+    ]
+  },
+  {
+    "id": "7b2a0f3c-9d4e-4e6f-0a1b-3c5d7e8f9a0b",
+    "speaker": "SPEAKER 1",
+    "text": "I guess like once or twice a week maybe.",
+    "context": "INTERVIEWER: ok and that happens like often? SPEAKER 1: Oh oh and one time I was filling out this form thing and got a call and came back and like it was GONE, no autosave or anything.",
+    "entities": {
+      "objects": [],
+      "tasks": [],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf",
+    "insights": [
+      {
+        "type": "frequency",
+        "label": "weekly",
+        "weight": 1.0
+      }
+    ],
+    "tags": [
+      "weekly",
+      "frequency"
+    ]
+  },
+  {
+    "id": "8c4e1d5f-0b6a-4c7d-1e8f-2a3b4c5d6e7f",
+    "speaker": "SPEAKER 1",
+    "text": "One time I was filling out this form thing and got a call and came back and like it was GONE, no autosave or anything.",
+    "context": "SPEAKER 1: idk yeah I guess like once or twice a week maybe. INTERVIEWER: yeah wow ok.",
+    "entities": {
+      "objects": [
+        "form thing",
+        "call",
+        "autosave"
+      ],
+      "tasks": [
+        "filling out",
+        "got",
+        "came back"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf",
+    "insights": [
+      {
+        "type": "persona",
+        "label": "form user",
+        "weight": 0.9
+      },
+      {
+        "type": "pain",
+        "label": "lost data",
+        "weight": 1.0
+      },
+      {
+        "type": "emotion",
+        "label": "annoyance",
+        "weight": 0.8
+      },
+      {
+        "type": "root_cause",
+        "label": "missing autosave",
+        "weight": 1.0
+      },
+      {
+        "type": "impact",
+        "label": "lost progress",
+        "weight": 0.9
+      },
+      {
+        "type": "context",
+        "label": "task interruption",
+        "weight": 0.9
+      },
+      {
+        "type": "frequency",
+        "label": "one-time",
+        "weight": 1.0
+      },
+      {
+        "type": "severity",
+        "label": "data loss",
+        "weight": 0.9
+      }
+    ],
+    "tags": [
+      "form",
+      "autosave",
+      "data loss",
+      "interruption"
+    ]
+  },
+  {
+    "id": "9a5b2c6d-1e7f-4f8a-2b9c-3d0e4f5a6b7c",
+    "speaker": "SPEAKER 1",
+    "text": "My friend doesn’t have these issues but he’s on iPhone so maybe it’s an Android thing? Not sure.",
+    "context": "INTERVIEWER: yeah wow ok.",
+    "entities": {
+      "objects": [
+        "friend",
+        "issues",
+        "iPhone",
+        "Android thing"
+      ],
+      "tasks": [
+        "have"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf",
+    "insights": [
+      {
+        "type": "device",
+        "label": "Android",
+        "weight": 0.9
+      },
+      {
+        "type": "device",
+        "label": "iPhone",
+        "weight": 0.8
+      },
+      {
+        "type": "root_cause",
+        "label": "Android thing",
+        "weight": 0.7
+      }
+    ],
+    "tags": [
+      "Android",
+      "iPhone",
+      "issues"
+    ]
+  }
+]

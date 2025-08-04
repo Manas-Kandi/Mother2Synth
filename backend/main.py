@@ -4,6 +4,8 @@ import json
 import re
 import time
 from fastapi import Request, HTTPException
+from quality_guard import run_quality_guard
+from chat_assistant import ChatAssistant
 
 # Add this near the top with other directory constants
 GRAPHS_DIR = "graphs"
@@ -49,6 +51,69 @@ async def build_graph(request: Request):
         json.dump(graph_data, f, indent=2, ensure_ascii=False)
     
     return graph_data
+
+
+# Quality Guard endpoint
+@app.post("/quality-guard")
+async def run_quality_validation(request: Request):
+    """Run comprehensive quality validation"""
+    filename = request.query_params.get("filename")
+    project_slug = request.query_params.get("project")
+    
+    if not filename or not project_slug:
+        raise HTTPException(status_code=400, detail="filename and project query params required")
+    
+    # Load required data
+    themes_path = f"/DropZone/{project_slug}/graphs/{filename.replace('.pdf', '_themes.json')}"
+    atoms_path = f"/DropZone/{project_slug}/atoms/{filename.replace('.pdf', '_atoms.json')}"
+    insights_path = f"/DropZone/{project_slug}/graphs/{filename.replace('.pdf', '_insights.json')}"
+    board_path = f"/DropZone/{project_slug}/boards/{filename.replace('.pdf', '_board.json')}"
+    
+    try:
+        with open(themes_path, 'r') as f:
+            themes = json.load(f)
+        with open(atoms_path, 'r') as f:
+            atoms = json.load(f)
+        with open(insights_path, 'r') as f:
+            insights = json.load(f)
+        with open(board_path, 'r') as f:
+            board_data = json.load(f)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=f"Required file not found: {e}")
+    
+    validation_report = run_quality_guard(project_slug, themes, atoms, insights, board_data)
+    return validation_report
+
+
+# Chat Assistant endpoint
+@app.post("/chat")
+async def chat_with_assistant(request: Request):
+    """Chat with the LLM research assistant"""
+    data = await request.json()
+    message = data.get('message')
+    project_slug = data.get('project')
+    context = data.get('context', {})
+    
+    if not message or not project_slug:
+        raise HTTPException(status_code=400, detail="message and project required")
+    
+    assistant = ChatAssistant(project_slug)
+    response = assistant.process_message(message, context)
+    
+    return response
+
+
+# Conversation history endpoint
+@app.get("/chat/history")
+async def get_chat_history(request: Request):
+    """Get chat conversation history"""
+    project_slug = request.query_params.get("project")
+    if not project_slug:
+        raise HTTPException(status_code=400, detail="project query param required")
+    
+    assistant = ChatAssistant(project_slug)
+    summary = assistant.get_conversation_summary()
+    return summary
 
 
 def run_llm_graph_builder(annotated_atoms: list[dict], source_file: str) -> dict:
