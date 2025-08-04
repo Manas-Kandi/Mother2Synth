@@ -27,10 +27,11 @@ class ProjectMetadata(BaseModel):
 
 class DropZoneManager:
     """Manages project-based DropZone system"""
-    
-    def __init__(self, base_path: str = "/DropZone"):
+
+    def __init__(self, project_slug: str = None, base_path: str = "/DropZone"):
         self.base_path = Path(base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
+        self.project_slug = project_slug
         self.projects_file = self.base_path / "projects.json"
         
     def create_project(self, name: str, description: str, researcher: str, 
@@ -88,6 +89,14 @@ class DropZoneManager:
     def get_project_path(self, project_slug: str, stage: str = "raw") -> Path:
         """Get path for specific project and stage"""
         return self.base_path / project_slug / stage
+
+    def get_path(self, stage: str, filename: str = "") -> Path:
+        """Get path within current project"""
+        if not self.project_slug:
+            raise ValueError("project_slug is required")
+        path = self.base_path / self.project_slug / stage
+        path.mkdir(parents=True, exist_ok=True)
+        return path / filename if filename else path
     
     def _generate_slug(self, name: str) -> str:
         """Generate URL-friendly slug from name"""

@@ -13,14 +13,14 @@ export default function TranscriptStage({ file }) {
 
   // Load existing comments when file changes
   useEffect(() => {
-    if (file?.name) {
+    if (file?.name && file?.project_slug) {
       loadComments();
     }
-  }, [file?.name]);
+  }, [file?.name, file?.project_slug]);
 
   const loadComments = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}`);
+      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}?project_slug=${encodeURIComponent(file.project_slug)}`);
       if (response.ok) {
         const data = await response.json();
         setComments(data.comments || {});
@@ -33,7 +33,7 @@ export default function TranscriptStage({ file }) {
   const saveComment = async (comment, exchangeId) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}`, {
+      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}?project_slug=${encodeURIComponent(file.project_slug)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ export default function TranscriptStage({ file }) {
 
   const removeComment = async (exchangeId, commentId) => {
     try {
-      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}/${commentId}`, {
+      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}/${commentId}?project_slug=${encodeURIComponent(file.project_slug)}`, {
         method: 'DELETE',
       });
       
