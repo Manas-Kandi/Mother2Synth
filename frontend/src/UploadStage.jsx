@@ -26,10 +26,10 @@ export default function UploadStage({
   const [slugValid, setSlugValid] = useState(false);
 
   useEffect(() => {
-    fetchWithProject("/projects")
+    fetchWithProject("/projects", {}, projectSlug)
       .then((r) => r.json())
       .then(setProjects);
-  }, []);
+  }, [projectSlug]);
 
   useEffect(() => {
     if (projectSlug) {
@@ -79,10 +79,11 @@ export default function UploadStage({
                         `/projects/${encodeURIComponent(name)}`,
                         {
                           method: "DELETE",
-                        }
+                        },
+                        projectSlug
                       );
                       // refresh list
-                      fetchWithProject("/projects")
+                      fetchWithProject("/projects", {}, projectSlug)
                         .then((r) => r.json())
                         .then(setProjects);
                     }}

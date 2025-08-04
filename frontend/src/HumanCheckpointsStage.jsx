@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchWithProject } from "./api";
 import "./HumanCheckpointsStage.css";
 
 export default function HumanCheckpointsStage({ file }) {
@@ -12,8 +13,10 @@ export default function HumanCheckpointsStage({ file }) {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(
-          `http://localhost:8000/qa?project=${encodeURIComponent(file.project_slug)}&filename=${encodeURIComponent(file.name)}`
+        const res = await fetchWithProject(
+          `/qa?filename=${encodeURIComponent(file.name)}`,
+          {},
+          file.project_slug
         );
         if (!res.ok) throw new Error("Failed to load checkpoints");
         const data = await res.json();
@@ -36,15 +39,18 @@ export default function HumanCheckpointsStage({ file }) {
   async function answerQuestion(id, answer) {
     setQuestions(prev => prev.map(q => q.question_id === id ? { ...q, current_answer: answer } : q));
     try {
-      await fetch("http://localhost:8000/qa/answer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project: file.project_slug,
-          question_id: id,
-          answer
-        })
-      });
+      await fetchWithProject(
+        "/qa/answer",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question_id: id,
+            answer
+          })
+        },
+        file.project_slug
+      );
     } catch {
       // Ignore errors for now
     }
