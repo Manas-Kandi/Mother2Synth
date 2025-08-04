@@ -7,7 +7,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 
 from llm import gemini_model
-from paths import UPLOAD_DIR, CLEANED_DIR, ATOMS_DIR, ANNOTATED_DIR, GRAPH_DIR
+from dropzone import DropZoneManager
 
 router = APIRouter()
 
@@ -80,10 +80,13 @@ def extract_text_from_pdf(pdf_path: str) -> str:
 
 
 @router.post("/upload")
-async def upload_pdfs(files: list[UploadFile] = File(...)):
+async def upload_pdfs(files: list[UploadFile] = File(...), project_slug: str | None = None):
+    if not project_slug:
+        raise HTTPException(status_code=400, detail="project_slug query param required")
+    dropzone = DropZoneManager(project_slug)
     saved_files: list[str] = []
     for file in files:
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
+        file_path = dropzone.get_path("uploads", file.filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         saved_files.append(file.filename)
@@ -92,14 +95,17 @@ async def upload_pdfs(files: list[UploadFile] = File(...)):
 
 
 @router.get("/normalize/{filename}")
-async def normalize_file(filename: str):
+async def normalize_file(filename: str, project_slug: str | None = None):
     if not filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Must be a PDF file")
-    cleaned_path = os.path.join(CLEANED_DIR, filename.replace(".pdf", ".txt"))
+    if not project_slug:
+        raise HTTPException(status_code=400, detail="project_slug query param required")
+    dropzone = DropZoneManager(project_slug)
+    cleaned_path = dropzone.get_path("cleaned", filename.replace(".pdf", ".txt"))
     if os.path.exists(cleaned_path):
         with open(cleaned_path, "r", encoding="utf-8") as f:
             return {"content": f.read()}
-    pdf_path = os.path.join(UPLOAD_DIR, filename)
+    pdf_path = dropzone.get_path("uploads", filename)
     if not os.path.exists(pdf_path):
         raise HTTPException(status_code=404, detail="File not found")
     raw_text = extract_text_from_pdf(pdf_path)
@@ -110,31 +116,38 @@ async def normalize_file(filename: str):
 
 
 @router.get("/projects")
-async def list_projects():
+async def list_projects(project_slug: str | None = None):
     """Return information about uploaded PDF projects."""
+    if not project_slug:
+        raise HTTPException(status_code=400, detail="project_slug query param required")
+    dropzone = DropZoneManager(project_slug)
     projects = {}
-    for filename in os.listdir(UPLOAD_DIR):
+    uploads_dir = dropzone.get_path("uploads")
+    for filename in os.listdir(uploads_dir):
         if not filename.lower().endswith(".pdf"):
             continue
         base = filename.replace(".pdf", "")
         projects[filename] = {
-            "cleaned": os.path.exists(os.path.join(CLEANED_DIR, f"{base}.txt")),
-            "atoms": os.path.exists(os.path.join(ATOMS_DIR, f"{base}.json")),
-            "annotated": os.path.exists(os.path.join(ANNOTATED_DIR, f"{base}.json")),
-            "graph": os.path.exists(os.path.join(GRAPH_DIR, f"{base}.json")),
+            "cleaned": os.path.exists(dropzone.get_path("cleaned", f"{base}.txt")),
+            "atoms": os.path.exists(dropzone.get_path("atoms", f"{base}.json")),
+            "annotated": os.path.exists(dropzone.get_path("annotated", f"{base}.json")),
+            "graph": os.path.exists(dropzone.get_path("graph", f"{base}.json")),
         }
     return projects
 
 
 @router.get("/cached/{stage}/{filename}")
-async def get_cached(stage: str, filename: str):
+async def get_cached(stage: str, filename: str, project_slug: str | None = None):
     """Return cached results for a file if available."""
+    if not project_slug:
+        raise HTTPException(status_code=400, detail="project_slug query param required")
+    dropzone = DropZoneManager(project_slug)
     base = filename.replace(".pdf", "")
     paths = {
-        "cleaned": os.path.join(CLEANED_DIR, f"{base}.txt"),
-        "atoms": os.path.join(ATOMS_DIR, f"{base}.json"),
-        "annotated": os.path.join(ANNOTATED_DIR, f"{base}.json"),
-        "graph": os.path.join(GRAPH_DIR, f"{base}.json"),
+        "cleaned": dropzone.get_path("cleaned", f"{base}.txt"),
+        "atoms": dropzone.get_path("atoms", f"{base}.json"),
+        "annotated": dropzone.get_path("annotated", f"{base}.json"),
+        "graph": dropzone.get_path("graph", f"{base}.json"),
     }
     path = paths.get(stage)
     if not path or not os.path.exists(path):
@@ -145,15 +158,18 @@ async def get_cached(stage: str, filename: str):
 
 
 @router.delete("/projects/{filename}")
-async def delete_project(filename: str):
+async def delete_project(filename: str, project_slug: str | None = None):
     """Delete all cached files for a project."""
+    if not project_slug:
+        raise HTTPException(status_code=400, detail="project_slug query param required")
+    dropzone = DropZoneManager(project_slug)
     base = filename.replace(".pdf", "")
     files_to_delete = [
-        os.path.join(UPLOAD_DIR, filename),
-        os.path.join(CLEANED_DIR, f"{base}.txt"),
-        os.path.join(ATOMS_DIR, f"{base}.json"),
-        os.path.join(ANNOTATED_DIR, f"{base}.json"),
-        os.path.join(GRAPH_DIR, f"{base}.json"),
+        dropzone.get_path("uploads", filename),
+        dropzone.get_path("cleaned", f"{base}.txt"),
+        dropzone.get_path("atoms", f"{base}.json"),
+        dropzone.get_path("annotated", f"{base}.json"),
+        dropzone.get_path("graph", f"{base}.json"),
     ]
     for path in files_to_delete:
         if os.path.exists(path):
