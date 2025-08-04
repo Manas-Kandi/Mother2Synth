@@ -13,20 +13,13 @@ export default function Shell() {
   const [files, setFiles] = useState([]); // List of { name, cleaned, atoms, annotated, graph }
   const [activeFileIndex, setActiveFileIndex] = useState(null); // null until one is clicked
   const [statusMessage, setStatusMessage] = useState("");
+  const [projectSlug, setProjectSlug] = useState("");
   const setSelectedFile = useGlobalStore((state) => state.setSelectedFile);
 
-  async function loadCached(filename) {
-    const [cleaned, atoms, annotated, graph] = await Promise.all([
-      fetchWithProject(`/cached/cleaned/${encodeURIComponent(filename)}`).then(r => r.text()),
-      fetchWithProject(`/cached/atoms/${encodeURIComponent(filename)}`).then(r => r.json()),
-      fetchWithProject(`/cached/annotated/${encodeURIComponent(filename)}`).then(r => r.json()),
-      fetchWithProject(`/cached/graph/${encodeURIComponent(filename)}`).then(r => r.json())
-    ]);
-    return { name: filename, cleaned, atoms, annotated, graph };
-  }
-
-  async function handleFiles(selectedFiles) {
-    if (!selectedFiles.length) return;
+  async function handleFiles(selectedFiles, slug) {
+    if (slug) setProjectSlug(slug);
+    const currentSlug = slug || projectSlug;
+    if (!selectedFiles.length || !currentSlug) return;
 
     setStatusMessage("Uploading PDF(s)…");
 
@@ -35,7 +28,7 @@ export default function Shell() {
     await fetchWithProject("/upload", {
       method: "POST",
       body: form,
-    });
+    }, currentSlug);
 
     const updated = [];
 
@@ -44,11 +37,11 @@ export default function Shell() {
       const filename = file.name;
 
       setStatusMessage(`Cleaning: ${filename} (${i+1}/${selectedFiles.length})`);
-      const normRes = await fetchWithProject(`/normalize/${encodeURIComponent(filename)}`);
+      const normRes = await fetchWithProject(`/normalize/${encodeURIComponent(filename)}`, {}, currentSlug);
       const { content: cleaned } = await normRes.json();
 
       setStatusMessage(`Atomizing: ${filename} (${i+1}/${selectedFiles.length})`);
-      const atomRes = await fetchWithProject(`/atomise/${encodeURIComponent(filename)}`);
+      const atomRes = await fetchWithProject(`/atomise/${encodeURIComponent(filename)}`, {}, currentSlug);
       const { atoms } = await atomRes.json();
 
       setStatusMessage(`Annotating: ${filename} (${i+1}/${selectedFiles.length})`);
@@ -57,7 +50,7 @@ export default function Shell() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(atoms),
-        })
+        }, currentSlug)
       ).json();
 
       setStatusMessage(`Graphing: ${filename} (${i+1}/${selectedFiles.length})`);
@@ -66,7 +59,7 @@ export default function Shell() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(annotated),
-        })
+        }, currentSlug)
       ).json();
 
       updated.push({ name: filename, cleaned, atoms, annotated, graph });
@@ -144,12 +137,10 @@ export default function Shell() {
           <UploadStage
             onFiles={handleFiles}
             statusMessage={statusMessage}
-            onJump={async (filename) => {
-              const loaded = await loadCached(filename);
-              setFiles([...files, loaded]);
-              setActiveFileIndex(files.length);
-              setSelectedFile(filename); // set global selectedFile on jump
-              setStage(0);
+            projectSlug={projectSlug}
+            setProjectSlug={setProjectSlug}
+            onJump={async (slug) => {
+              setProjectSlug(slug);
             }}
           />
         )}

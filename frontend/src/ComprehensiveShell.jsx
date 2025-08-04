@@ -64,7 +64,7 @@ export default function ComprehensiveShell() {
     }
 
     try {
-      const res = await fetch("http://localhost:8000/projects");
+      const res = await fetchWithProject("/projects", {}, slug);
       const projects = await res.json();
       if (!projects[slug]) {
         setStatusMessage("Project slug not found.");
