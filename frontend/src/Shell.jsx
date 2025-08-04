@@ -12,14 +12,18 @@ export default function Shell() {
   const [files, setFiles] = useState([]); // List of { name, cleaned, atoms, annotated, graph }
   const [activeFileIndex, setActiveFileIndex] = useState(null); // null until one is clicked
   const [statusMessage, setStatusMessage] = useState("");
-  const setSelectedFile = useGlobalStore((state) => state.setSelectedFile);
+  const { setSelectedFile, projectSlug, setProjectSlug } = useGlobalStore((state) => ({
+    setSelectedFile: state.setSelectedFile,
+    projectSlug: state.projectSlug,
+    setProjectSlug: state.setProjectSlug
+  }));
 
-  async function loadCached(filename) {
+  async function loadCached(filename, slug = projectSlug) {
     const [cleaned, atoms, annotated, graph] = await Promise.all([
-      fetch(`http://localhost:8000/cached/cleaned/${encodeURIComponent(filename)}`).then(r => r.text()),
-      fetch(`http://localhost:8000/cached/atoms/${encodeURIComponent(filename)}`).then(r => r.json()),
-      fetch(`http://localhost:8000/cached/annotated/${encodeURIComponent(filename)}`).then(r => r.json()),
-      fetch(`http://localhost:8000/cached/graph/${encodeURIComponent(filename)}`).then(r => r.json())
+      fetch(`http://localhost:8000/cached/cleaned/${encodeURIComponent(filename)}?project_slug=${slug}`).then(r => r.text()),
+      fetch(`http://localhost:8000/cached/atoms/${encodeURIComponent(filename)}?project_slug=${slug}`).then(r => r.json()),
+      fetch(`http://localhost:8000/cached/annotated/${encodeURIComponent(filename)}?project_slug=${slug}`).then(r => r.json()),
+      fetch(`http://localhost:8000/cached/graph/${encodeURIComponent(filename)}?project_slug=${slug}`).then(r => r.json())
     ]);
     return { name: filename, cleaned, atoms, annotated, graph };
   }
@@ -29,9 +33,12 @@ export default function Shell() {
 
     setStatusMessage("Uploading PDF(s)…");
 
+    const slug = selectedFiles[0].name;
+    setProjectSlug(slug);
+
     const form = new FormData();
     selectedFiles.forEach((f) => form.append("files", f));
-    await fetch("http://localhost:8000/upload", {
+    await fetch(`http://localhost:8000/upload?project_slug=${slug}`, {
       method: "POST",
       body: form,
     });
@@ -43,16 +50,16 @@ export default function Shell() {
       const filename = file.name;
 
       setStatusMessage(`Cleaning: ${filename} (${i+1}/${selectedFiles.length})`);
-      const normRes = await fetch(`http://localhost:8000/normalize/${encodeURIComponent(filename)}`);
+      const normRes = await fetch(`http://localhost:8000/normalize/${encodeURIComponent(filename)}?project_slug=${slug}`);
       const { content: cleaned } = await normRes.json();
 
       setStatusMessage(`Atomizing: ${filename} (${i+1}/${selectedFiles.length})`);
-      const atomRes = await fetch(`http://localhost:8000/atomise/${encodeURIComponent(filename)}`);
+      const atomRes = await fetch(`http://localhost:8000/atomise/${encodeURIComponent(filename)}?project_slug=${slug}`);
       const { atoms } = await atomRes.json();
 
       setStatusMessage(`Annotating: ${filename} (${i+1}/${selectedFiles.length})`);
       const annotated = await (
-        await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}`, {
+        await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}&project_slug=${slug}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(atoms),
@@ -61,7 +68,7 @@ export default function Shell() {
 
       setStatusMessage(`Graphing: ${filename} (${i+1}/${selectedFiles.length})`);
       const graph = await (
-        await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}`, {
+        await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}&project_slug=${slug}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(annotated),
@@ -144,7 +151,8 @@ export default function Shell() {
             onFiles={handleFiles}
             statusMessage={statusMessage}
             onJump={async (filename) => {
-              const loaded = await loadCached(filename);
+              setProjectSlug(filename);
+              const loaded = await loadCached(filename, filename);
               setFiles([...files, loaded]);
               setActiveFileIndex(files.length);
               setSelectedFile(filename); // set global selectedFile on jump

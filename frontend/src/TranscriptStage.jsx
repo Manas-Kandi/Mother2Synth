@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useGlobalStore } from "./store";
 import "./TranscriptStage.css";
 
 export default function TranscriptStage({ file }) {
@@ -10,17 +11,18 @@ export default function TranscriptStage({ file }) {
   const [highlightedText, setHighlightedText] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const documentRef = useRef(null);
+  const projectSlug = useGlobalStore((state) => state.projectSlug);
 
   // Load existing comments when file changes
   useEffect(() => {
     if (file?.name) {
       loadComments();
     }
-  }, [file?.name]);
+  }, [file?.name, projectSlug]);
 
   const loadComments = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}`);
+      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}?project_slug=${projectSlug}`);
       if (response.ok) {
         const data = await response.json();
         setComments(data.comments || {});
@@ -33,7 +35,7 @@ export default function TranscriptStage({ file }) {
   const saveComment = async (comment, exchangeId) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}`, {
+      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}?project_slug=${projectSlug}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,7 +66,7 @@ export default function TranscriptStage({ file }) {
 
   const removeComment = async (exchangeId, commentId) => {
     try {
-      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}/${commentId}`, {
+      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}/${commentId}?project_slug=${projectSlug}`, {
         method: 'DELETE',
       });
       
@@ -104,7 +106,7 @@ export default function TranscriptStage({ file }) {
 
   const uniqueSpeakers = [...new Set(blocks.map(b => b.speaker))];
 
-  const handleTextSelection = (exchangeId, event) => {
+  const handleTextSelection = (exchangeId) => {
     const selection = window.getSelection();
     if (selection.toString().trim()) {
       const range = selection.getRangeAt(0);
@@ -223,7 +225,6 @@ export default function TranscriptStage({ file }) {
 
           <div className="transcript-flow">
             {blocks.map((block, i) => {
-              const speakerIndex = uniqueSpeakers.indexOf(block.speaker) % 3;
               const isInterviewer = block.speaker.toLowerCase().includes('interviewer');
               const exchangeComments = comments[i] || [];
               const isHighlighted = highlightedText && highlightedText.exchangeId === i;
