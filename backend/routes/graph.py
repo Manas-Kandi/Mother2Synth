@@ -20,9 +20,13 @@ def find_shared_insights(node1: dict, node2: dict) -> List[tuple]:
 
 
 @router.post("/graph")
-async def build_graph(atoms: List[dict], filename: str):
-    graph_path = os.path.join(GRAPH_DIR, filename.replace(".pdf", ".json"))
-    if os.path.exists(graph_path):
+async def build_graph(atoms: List[dict], filename: str, project_slug: str = None):
+    from dropzone import dropzone_manager
+    if not project_slug:
+        raise HTTPException(status_code=400, detail="project_slug query param required")
+    graph_path = dropzone_manager.get_project_path(project_slug, "graphs") / filename.replace(".pdf", ".json")
+    print(f"[DropZone] Graph: graph_path={graph_path}")
+    if graph_path.exists():
         with open(graph_path, "r", encoding="utf-8") as f:
             return json.load(f)
 

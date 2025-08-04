@@ -137,21 +137,29 @@ def annotate_atom(text: str) -> dict:
 
 
 @router.get("/atomise/{filename}")
-async def atomise_file(filename: str):
+async def atomise_file(filename: str, project_slug: str = None):
+    from dropzone import dropzone_manager
     if not filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Must be a PDF file")
-    atoms_path = os.path.join(ATOMS_DIR, filename.replace(".pdf", ".json"))
-    if os.path.exists(atoms_path):
+    if not project_slug:
+        raise HTTPException(status_code=400, detail="project_slug query param required")
+    atoms_path = dropzone_manager.get_project_path(project_slug, "atoms") / filename.replace(".pdf", ".json")
+    cleaned_path = dropzone_manager.get_project_path(project_slug, "cleaned") / filename.replace(".pdf", ".txt")
+    raw_path = dropzone_manager.get_project_path(project_slug, "raw") / filename
+    print(f"[DropZone] Atomise: atoms_path={atoms_path}, cleaned_path={cleaned_path}, raw_path={raw_path}")
+    if atoms_path.exists():
         with open(atoms_path, "r", encoding="utf-8") as f:
             return {"atoms": json.load(f)}
-    cleaned_path = os.path.join(CLEANED_DIR, filename.replace(".pdf", ".txt"))
-    if os.path.exists(cleaned_path):
+    if cleaned_path.exists():
         with open(cleaned_path, "r", encoding="utf-8") as f:
             clean_text = f.read()
-    else:
-        pdf_path = os.path.join(UPLOAD_DIR, filename)
-        full_text = extract_text_from_pdf(pdf_path)
+    elif raw_path.exists():
+        full_text = extract_text_from_pdf(str(raw_path))
         clean_text = run_llm_normalizer(full_text)
+        with open(cleaned_path, "w", encoding="utf-8") as f:
+            f.write(clean_text)
+    else:
+        raise HTTPException(status_code=404, detail=f"Raw PDF not found in DropZone: {raw_path}")
     atoms = run_llm_atomiser(clean_text, filename)
     with open(atoms_path, "w", encoding="utf-8") as f:
         json.dump(atoms, f, indent=2, ensure_ascii=False)
@@ -159,10 +167,14 @@ async def atomise_file(filename: str):
 
 
 @router.post("/annotate")
-async def annotate_atoms(atoms: List[dict], filename: str):
-    """Annotate atoms and cache the results."""
-    annotated_path = os.path.join(ANNOTATED_DIR, filename.replace(".pdf", ".json"))
-    if os.path.exists(annotated_path):
+async def annotate_atoms(atoms: List[dict], filename: str, project_slug: str = None):
+    """Annotate atoms and cache the results in DropZone."""
+    from dropzone import dropzone_manager
+    if not project_slug:
+        raise HTTPException(status_code=400, detail="project_slug query param required")
+    annotated_path = dropzone_manager.get_project_path(project_slug, "annotated") / filename.replace(".pdf", ".json")
+    print(f"[DropZone] Annotate: annotated_path={annotated_path}")
+    if annotated_path.exists():
         with open(annotated_path, "r", encoding="utf-8") as f:
             enriched = json.load(f)
     else:

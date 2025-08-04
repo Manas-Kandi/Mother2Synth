@@ -71,7 +71,7 @@ export default function ComprehensiveShell() {
         setStatusMessage(`Cleaning: ${filename} (${i+1}/${selectedFiles.length})`);
         const form = new FormData();
         form.append("files", file);
-        const uploadRes = await fetch("http://localhost:8000/upload", {
+        const uploadRes = await fetch(`http://localhost:8000/upload?project_slug=${encodeURIComponent(slug)}`, {
           method: "POST",
           body: form,
         });
@@ -79,19 +79,19 @@ export default function ComprehensiveShell() {
           throw new Error(`Upload failed: ${uploadRes.statusText}`);
         }
 
-        const normRes = await fetch(`http://localhost:8000/normalize/${encodeURIComponent(filename)}`);
+        const normRes = await fetch(`http://localhost:8000/normalize/${encodeURIComponent(filename)}?project_slug=${encodeURIComponent(slug)}`);
         if (!normRes.ok) throw new Error(`Normalization failed: ${normRes.statusText}`);
         const { content: cleaned } = await normRes.json();
 
         // Step 2: Atomize
         setStatusMessage(`Atomizing: ${filename} (${i+1}/${selectedFiles.length})`);
-        const atomRes = await fetch(`http://localhost:8000/atomise/${encodeURIComponent(filename)}`);
+        const atomRes = await fetch(`http://localhost:8000/atomise/${encodeURIComponent(filename)}?project_slug=${encodeURIComponent(slug)}`);
         if (!atomRes.ok) throw new Error(`Atomization failed: ${atomRes.statusText}`);
         const { atoms } = await atomRes.json();
 
         // Step 3: Annotate
         setStatusMessage(`Annotating: ${filename} (${i+1}/${selectedFiles.length})`);
-        const annotateRes = await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}`, {
+        const annotateRes = await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}&project_slug=${encodeURIComponent(slug)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(atoms),
@@ -101,7 +101,7 @@ export default function ComprehensiveShell() {
 
         // Step 4: Build graph
         setStatusMessage(`Building graph: ${filename} (${i+1}/${selectedFiles.length})`);
-        const graphRes = await fetch(`http://localhost:8000/graph-build?filename=${encodeURIComponent(filename)}`, {
+        const graphRes = await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}&project_slug=${encodeURIComponent(slug)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(annotated),
@@ -114,7 +114,7 @@ export default function ComprehensiveShell() {
         const boardRes = await fetch(`http://localhost:8000/board/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ atoms: annotated, themes: graph.themes, project: slug }),
+          body: JSON.stringify({ atoms: annotated, themes: graph.themes, project_slug: slug, filename }),
         });
         if (!boardRes.ok) throw new Error(`Board creation failed: ${boardRes.statusText}`);
         const board = await boardRes.json();
@@ -155,6 +155,8 @@ export default function ComprehensiveShell() {
     setSelectedFile(newFiles[newFiles.length - updated.length]?.name || null);
     setStage(STAGES.TRANSCRIPT);
     setStatusMessage("Processing complete!");
+    // Debug: log file structure after processing
+    console.log("[DEBUG] Processed files:", newFiles);
   }
 
   function getActiveFile() {
