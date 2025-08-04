@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from paths import ensure_dirs
-from routes import upload, atoms, graph, comments
+from routes import upload, atoms, graph, comments, quality_guard, chat
 
 ensure_dirs()
 
@@ -21,3 +21,5 @@ app.include_router(upload.router)
 app.include_router(atoms.router)
 app.include_router(graph.router)
 app.include_router(comments.router)
+app.include_router(quality_guard.router)
+app.include_router(chat.router)
