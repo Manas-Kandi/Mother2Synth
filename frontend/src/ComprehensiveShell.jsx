@@ -57,6 +57,24 @@ export default function ComprehensiveShell() {
   async function handleFiles(selectedFiles, slug) {
     if (!selectedFiles.length) return;
 
+    if (!slug) {
+      setStatusMessage("Project slug is required.");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:8000/projects");
+      const projects = await res.json();
+      if (!projects[slug]) {
+        setStatusMessage("Project slug not found.");
+        return;
+      }
+    } catch (err) {
+      console.error("Error validating slug", err);
+      setStatusMessage("Error validating project slug.");
+      return;
+    }
+
     setProjectSlug(slug);
     setStatusMessage("Processing files...");
 
