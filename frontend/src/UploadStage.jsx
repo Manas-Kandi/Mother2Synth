@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useGlobalStore } from "./store";
 import "./UploadStage.css";
 
 const TrashIcon = () => (
@@ -16,16 +17,21 @@ const TrashIcon = () => (
 
 export default function UploadStage({ onFiles, statusMessage, onJump }) {
   const [projects, setProjects] = useState({});
+  const projectSlug = useGlobalStore((state) => state.projectSlug);
+  const setProjectSlug = useGlobalStore((state) => state.setProjectSlug);
 
   useEffect(() => {
-    fetch("http://localhost:8000/projects")
+    fetch(`http://localhost:8000/projects?project_slug=${projectSlug}`)
       .then((r) => r.json())
       .then(setProjects);
-  }, []);
+  }, [projectSlug]);
 
   function handleChange(e) {
     const files = Array.from(e.target.files || []);
-    if (files.length) onFiles(files);
+    if (files.length) {
+      setProjectSlug(files[0].name);
+      onFiles(files);
+    }
   }
 
   return (
@@ -42,7 +48,10 @@ export default function UploadStage({ onFiles, statusMessage, onJump }) {
                 <li key={name}>
                   <button
                     className="jump-link"
-                    onClick={() => onJump && onJump(name)}
+                    onClick={() => {
+                      setProjectSlug(name);
+                      onJump && onJump(name);
+                    }}
                   >
                     {name}
                   </button>
@@ -57,13 +66,13 @@ export default function UploadStage({ onFiles, statusMessage, onJump }) {
                     className="delete-btn"
                     onClick={async () => {
                       await fetch(
-                        `http://localhost:8000/projects/${encodeURIComponent(name)}`,
+                        `http://localhost:8000/projects/${encodeURIComponent(name)}?project_slug=${projectSlug}`,
                         {
                           method: "DELETE",
                         }
                       );
                       // refresh list
-                      fetch("http://localhost:8000/projects")
+                      fetch(`http://localhost:8000/projects?project_slug=${projectSlug}`)
                         .then((r) => r.json())
                         .then(setProjects);
                     }}

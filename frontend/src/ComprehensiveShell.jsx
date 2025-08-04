@@ -111,7 +111,7 @@ export default function ComprehensiveShell() {
 
         // Step 5: Create board
         setStatusMessage(`Creating board: ${filename} (${i+1}/${selectedFiles.length})`);
-        const boardRes = await fetch(`http://localhost:8000/board/create`, {
+        const boardRes = await fetch(`http://localhost:8000/board/create?project_slug=${encodeURIComponent(slug)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ atoms: annotated, themes: graph.themes, project_slug: slug, filename }),
@@ -119,17 +119,17 @@ export default function ComprehensiveShell() {
         if (!boardRes.ok) throw new Error(`Board creation failed: ${boardRes.statusText}`);
         const board = await boardRes.json();
 
-        updated.push({
-          name: filename,
-          cleaned,
-          atoms,
-          annotated,
-          graph,
-          board,
-          project_slug: slug,
-          status: 'complete'
-        });
-      } catch (error) {
+      updated.push({
+        name: filename,
+        cleaned,
+        atoms,
+        annotated,
+        graph,
+        board,
+        project_slug: slug,
+        status: 'complete'
+      });
+    } catch (error) {
         console.error(`Error processing ${selectedFiles[i]?.name}:`, error);
         updated.push({
           name: selectedFiles[i]?.name || 'unknown',
@@ -137,16 +137,6 @@ export default function ComprehensiveShell() {
           error: error.message
         });
       }
-
-      updated.push({ 
-        name: filename, 
-        cleaned, 
-        atoms, 
-        annotated, 
-        graph,
-        board,
-        project_slug: slug
-      });
     }
 
     const newFiles = [...files, ...updated];

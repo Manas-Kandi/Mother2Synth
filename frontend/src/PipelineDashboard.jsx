@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useGlobalStore } from "./store";
 import "./PipelineDashboard.css";
 import SynthesisDoc from "./SynthesisDoc";
 
 export default function PipelineDashboard({ files }) {
   const [status, setStatus] = useState({}); // { step, state, data }
   const [expanded, setExpanded] = useState(null);
+  const projectSlug = useGlobalStore((state) => state.projectSlug);
 
   useEffect(() => {
     if (!files || !files.length) return;
@@ -14,24 +16,24 @@ export default function PipelineDashboard({ files }) {
       const form = new FormData();
       files.forEach(f => form.append("files", f));
       setStatus({ upload: { state: "running" }, step: "upload" });
-      await fetch("http://localhost:8000/upload", { method: "POST", body: form });
+      await fetch(`http://localhost:8000/upload?project_slug=${projectSlug}`, { method: "POST", body: form });
       setStatus(s => ({ ...s, upload: { state: "done" }, step: "upload" }));
 
       // 2. Normalize
       setStatus(s => ({ ...s, normalize: { state: "running" }, step: "normalize" }));
-      const normRes = await fetch("http://localhost:8000/normalize");
+      const normRes = await fetch(`http://localhost:8000/normalize?project_slug=${projectSlug}`);
       const norm = await normRes.json();
       setStatus(s => ({ ...s, normalize: { state: "done", data: norm }, step: "normalize" }));
 
       // 3. Atomise
       setStatus(s => ({ ...s, atomise: { state: "running" }, step: "atomise" }));
-      const atomRes = await fetch("http://localhost:8000/atomise");
+      const atomRes = await fetch(`http://localhost:8000/atomise?project_slug=${projectSlug}`);
       const atoms = await atomRes.json();
       setStatus(s => ({ ...s, atomise: { state: "done", data: atoms }, step: "atomise" }));
 
       // 4. Annotate
       setStatus(s => ({ ...s, annotate: { state: "running" }, step: "annotate" }));
-      const annRes = await fetch("http://localhost:8000/annotate", {
+      const annRes = await fetch(`http://localhost:8000/annotate?project_slug=${projectSlug}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(Object.values(atoms).flat().flat())
@@ -39,7 +41,7 @@ export default function PipelineDashboard({ files }) {
       const annotated = await annRes.json();
       setStatus(s => ({ ...s, annotate: { state: "done", data: annotated }, step: "annotate" }));
     })();
-  }, [files]);
+  }, [files, projectSlug]);
 
   // If all steps are done, show the SynthesisDoc view for the first file
   const fileKey = files[0]?.name;

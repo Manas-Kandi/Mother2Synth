@@ -8,6 +8,7 @@ import "./GraphStage.css";
 export default function GraphStage({ file }) {
   const graphRef = useRef();
   const [selectedNode, setSelectedNode] = useState(null);
+  const projectSlug = useGlobalStore((state) => state.projectSlug);
   
   // Validate and format graph data
   const formatGraphData = (rawGraph) => {
@@ -82,7 +83,7 @@ export default function GraphStage({ file }) {
       console.log("Enhancing graph with LLM...", rawGraph.nodes.length, "nodes");
       
       // Send nodes to backend for LLM analysis
-      const response = await fetch('http://localhost:8000/enhance-graph', {
+      const response = await fetch(`http://localhost:8000/enhance-graph?project_slug=${projectSlug}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
