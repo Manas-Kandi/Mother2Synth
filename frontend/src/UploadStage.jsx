@@ -15,8 +15,15 @@ const TrashIcon = () => (
   </svg>
 );
 
-export default function UploadStage({ onFiles, statusMessage, onJump }) {
+export default function UploadStage({
+  onFiles,
+  statusMessage,
+  projectSlug,
+  setProjectSlug,
+  onJump,
+}) {
   const [projects, setProjects] = useState({});
+  const [slugValid, setSlugValid] = useState(false);
 
   useEffect(() => {
     fetchWithProject("/projects")
@@ -24,9 +31,17 @@ export default function UploadStage({ onFiles, statusMessage, onJump }) {
       .then(setProjects);
   }, []);
 
+  useEffect(() => {
+    if (projectSlug) {
+      setSlugValid(Object.prototype.hasOwnProperty.call(projects, projectSlug));
+    } else {
+      setSlugValid(false);
+    }
+  }, [projectSlug, projects]);
+
   function handleChange(e) {
     const files = Array.from(e.target.files || []);
-    if (files.length) onFiles(files);
+    if (files.length && slugValid) onFiles(files, projectSlug);
   }
 
   return (
@@ -43,7 +58,10 @@ export default function UploadStage({ onFiles, statusMessage, onJump }) {
                 <li key={name}>
                   <button
                     className="jump-link"
-                    onClick={() => onJump && onJump(name)}
+                    onClick={() => {
+                      setProjectSlug(name);
+                      if (onJump) onJump(name);
+                    }}
                   >
                     {name}
                   </button>
@@ -78,7 +96,21 @@ export default function UploadStage({ onFiles, statusMessage, onJump }) {
           </>
         )}
 
-        <label htmlFor="file-upload" className="upload-area">
+        <input
+          type="text"
+          value={projectSlug}
+          onChange={(e) => setProjectSlug(e.target.value)}
+          placeholder="Enter project slug"
+          className={`slug-input ${projectSlug && !slugValid ? "invalid" : ""}`}
+        />
+        {projectSlug && !slugValid && (
+          <p className="slug-error">Project slug not found</p>
+        )}
+
+        <label
+          htmlFor="file-upload"
+          className={`upload-area ${slugValid ? "" : "disabled"}`}
+        >
           Drop new PDFs here or click to select
         </label>
         <input
@@ -87,6 +119,7 @@ export default function UploadStage({ onFiles, statusMessage, onJump }) {
           multiple
           onChange={handleChange}
           id="file-upload"
+          disabled={!slugValid}
         />
 
         {statusMessage && (
