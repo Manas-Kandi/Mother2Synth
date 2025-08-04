@@ -1,8 +1,8 @@
 // Fixed GraphStage.jsx with proper data validation
 
 import { useEffect, useRef, useState, useMemo } from "react";
+import { fetchWithProject } from "./api";
 import ForceGraph2D from "react-force-graph-2d";
-import { useGlobalStore } from "./store";
 import "./GraphStage.css";
 
 export default function GraphStage({ file }) {
@@ -82,7 +82,7 @@ export default function GraphStage({ file }) {
       console.log("Enhancing graph with LLM...", rawGraph.nodes.length, "nodes");
       
       // Send nodes to backend for LLM analysis
-      const response = await fetch('http://localhost:8000/enhance-graph', {
+      const response = await fetchWithProject('/enhance-graph', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -94,7 +94,7 @@ export default function GraphStage({ file }) {
             tags: node.tags || []
           }))
         })
-      });
+      }, file?.project_slug);
       
       if (!response.ok) {
         console.warn('LLM enhancement failed, using original data');

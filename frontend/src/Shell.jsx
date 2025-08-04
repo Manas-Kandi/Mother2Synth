@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useGlobalStore } from "./store";
+import { fetchWithProject } from "./api";
 import "./Shell.css";
 import UploadStage from "./UploadStage";
 import TranscriptStage from "./TranscriptStage";
@@ -16,10 +17,10 @@ export default function Shell() {
 
   async function loadCached(filename) {
     const [cleaned, atoms, annotated, graph] = await Promise.all([
-      fetch(`http://localhost:8000/cached/cleaned/${encodeURIComponent(filename)}`).then(r => r.text()),
-      fetch(`http://localhost:8000/cached/atoms/${encodeURIComponent(filename)}`).then(r => r.json()),
-      fetch(`http://localhost:8000/cached/annotated/${encodeURIComponent(filename)}`).then(r => r.json()),
-      fetch(`http://localhost:8000/cached/graph/${encodeURIComponent(filename)}`).then(r => r.json())
+      fetchWithProject(`/cached/cleaned/${encodeURIComponent(filename)}`).then(r => r.text()),
+      fetchWithProject(`/cached/atoms/${encodeURIComponent(filename)}`).then(r => r.json()),
+      fetchWithProject(`/cached/annotated/${encodeURIComponent(filename)}`).then(r => r.json()),
+      fetchWithProject(`/cached/graph/${encodeURIComponent(filename)}`).then(r => r.json())
     ]);
     return { name: filename, cleaned, atoms, annotated, graph };
   }
@@ -31,7 +32,7 @@ export default function Shell() {
 
     const form = new FormData();
     selectedFiles.forEach((f) => form.append("files", f));
-    await fetch("http://localhost:8000/upload", {
+    await fetchWithProject("/upload", {
       method: "POST",
       body: form,
     });
@@ -43,16 +44,16 @@ export default function Shell() {
       const filename = file.name;
 
       setStatusMessage(`Cleaning: ${filename} (${i+1}/${selectedFiles.length})`);
-      const normRes = await fetch(`http://localhost:8000/normalize/${encodeURIComponent(filename)}`);
+      const normRes = await fetchWithProject(`/normalize/${encodeURIComponent(filename)}`);
       const { content: cleaned } = await normRes.json();
 
       setStatusMessage(`Atomizing: ${filename} (${i+1}/${selectedFiles.length})`);
-      const atomRes = await fetch(`http://localhost:8000/atomise/${encodeURIComponent(filename)}`);
+      const atomRes = await fetchWithProject(`/atomise/${encodeURIComponent(filename)}`);
       const { atoms } = await atomRes.json();
 
       setStatusMessage(`Annotating: ${filename} (${i+1}/${selectedFiles.length})`);
       const annotated = await (
-        await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}`, {
+        await fetchWithProject(`/annotate?filename=${encodeURIComponent(filename)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(atoms),
@@ -61,7 +62,7 @@ export default function Shell() {
 
       setStatusMessage(`Graphing: ${filename} (${i+1}/${selectedFiles.length})`);
       const graph = await (
-        await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}`, {
+        await fetchWithProject(`/graph?filename=${encodeURIComponent(filename)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(annotated),

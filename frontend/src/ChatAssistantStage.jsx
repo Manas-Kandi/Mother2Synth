@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { useGlobalStore } from "./store";
+import { fetchWithProject } from "./api";
 import "./ChatAssistantStage.css";
 
-export default function ChatAssistantStage({ file, context }) {
+export default function ChatAssistantStage({ file }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -10,7 +10,6 @@ export default function ChatAssistantStage({ file, context }) {
   const [contextPanel, setContextPanel] = useState(false);
   
   const messagesEndRef = useRef(null);
-  const selectedFile = useGlobalStore((state) => state.selectedFile);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -22,18 +21,16 @@ export default function ChatAssistantStage({ file, context }) {
     if (file && file.project_slug) {
       loadConversationHistory();
     }
-  }, [file]);
+  }, [file, loadConversationHistory]);
 
   async function loadConversationHistory() {
     if (!file || !file.project_slug) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/chat/history?project=${encodeURIComponent(file.project_slug)}`
-      );
+        const response = await fetchWithProject("/chat/history", {}, file.project_slug);
       
       if (response.ok) {
-        const history = await response.json();
+        await response.json();
         // Convert history to message format
         const chatMessages = [
           {
@@ -64,12 +61,11 @@ export default function ChatAssistantStage({ file, context }) {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8000/chat", {
+      const response = await fetchWithProject("/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: inputMessage,
-          project: file.project_slug,
           context: {
             filename: file.name,
             themes: file.graph?.themes || [],
@@ -79,7 +75,7 @@ export default function ChatAssistantStage({ file, context }) {
             stage: "quality_assurance"
           }
         })
-      });
+      }, file.project_slug);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -120,7 +116,7 @@ export default function ChatAssistantStage({ file, context }) {
         // Navigate to quality guard stage
         window.dispatchEvent(new CustomEvent('navigate-to-stage', { detail: 6 }));
         break;
-      case 'show_quotes':
+      case 'show_quotes': {
         // Show supporting quotes for a theme
         const quotesMessage = {
           role: "assistant",
@@ -129,7 +125,8 @@ export default function ChatAssistantStage({ file, context }) {
         };
         setMessages(prev => [...prev, quotesMessage]);
         break;
-      case 'add_quote':
+        }
+      case 'add_quote': {
         // Add a quote to theme evidence
         const addMessage = {
           role: "assistant",
@@ -138,6 +135,7 @@ export default function ChatAssistantStage({ file, context }) {
         };
         setMessages(prev => [...prev, addMessage]);
         break;
+        }
       default:
         console.log("Unknown action type:", action.type);
     }

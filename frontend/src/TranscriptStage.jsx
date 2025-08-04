@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import "./TranscriptStage.css";
+import { fetchWithProject } from "./api";
 
 export default function TranscriptStage({ file }) {
   const [comments, setComments] = useState({});
@@ -20,7 +21,7 @@ export default function TranscriptStage({ file }) {
 
   const loadComments = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}`);
+      const response = await fetchWithProject(`/comments/${encodeURIComponent(file.name)}`, {}, file.project_slug);
       if (response.ok) {
         const data = await response.json();
         setComments(data.comments || {});
@@ -33,7 +34,7 @@ export default function TranscriptStage({ file }) {
   const saveComment = async (comment, exchangeId) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}`, {
+      const response = await fetchWithProject(`/comments/${encodeURIComponent(file.name)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,7 +47,7 @@ export default function TranscriptStage({ file }) {
             filename: file.name
           }
         }),
-      });
+      }, file.project_slug);
       
       if (!response.ok) {
         throw new Error('Failed to save comment');
@@ -64,9 +65,9 @@ export default function TranscriptStage({ file }) {
 
   const removeComment = async (exchangeId, commentId) => {
     try {
-      const response = await fetch(`http://localhost:8000/comments/${encodeURIComponent(file.name)}/${commentId}`, {
+      const response = await fetchWithProject(`/comments/${encodeURIComponent(file.name)}/${commentId}`, {
         method: 'DELETE',
-      });
+      }, file.project_slug);
       
       if (!response.ok) {
         throw new Error('Failed to delete comment');
@@ -104,7 +105,7 @@ export default function TranscriptStage({ file }) {
 
   const uniqueSpeakers = [...new Set(blocks.map(b => b.speaker))];
 
-  const handleTextSelection = (exchangeId, event) => {
+  const handleTextSelection = (exchangeId) => {
     const selection = window.getSelection();
     if (selection.toString().trim()) {
       const range = selection.getRangeAt(0);
@@ -223,7 +224,6 @@ export default function TranscriptStage({ file }) {
 
           <div className="transcript-flow">
             {blocks.map((block, i) => {
-              const speakerIndex = uniqueSpeakers.indexOf(block.speaker) % 3;
               const isInterviewer = block.speaker.toLowerCase().includes('interviewer');
               const exchangeComments = comments[i] || [];
               const isHighlighted = highlightedText && highlightedText.exchangeId === i;
@@ -244,7 +244,7 @@ export default function TranscriptStage({ file }) {
                   
                   <div 
                     className={`exchange-content ${isHighlighted ? 'highlighted' : ''}`}
-                    onMouseUp={(e) => handleTextSelection(i, e)}
+                    onMouseUp={() => handleTextSelection(i)}
                   >
                     {block.text}
                   </div>
