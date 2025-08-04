@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
-import { useGlobalStore } from "./store";
+import { fetchWithProject } from "./api";
 import "./QualityGuardStage.css";
 
-export default function QualityGuardStage({ file, context }) {
+export default function QualityGuardStage({ file }) {
   const [validationReport, setValidationReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   
-  const selectedFile = useGlobalStore((state) => state.selectedFile);
 
   useEffect(() => {
     if (file && file.name) {
@@ -26,10 +25,7 @@ export default function QualityGuardStage({ file, context }) {
     setError(null);
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/quality-guard?filename=${encodeURIComponent(file.name)}&project=${encodeURIComponent(file.project_slug)}`,
-        { method: "POST" }
-      );
+      const response = await fetchWithProject(`/quality-guard?filename=${encodeURIComponent(file.name)}`, { method: "POST" }, file.project_slug);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

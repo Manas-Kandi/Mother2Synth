@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useGlobalStore } from "./store";
+import { fetchWithProject } from "./api";
 import "./ComprehensiveShell.css";
 
 // Import all stage components
@@ -71,51 +72,51 @@ export default function ComprehensiveShell() {
         setStatusMessage(`Cleaning: ${filename} (${i+1}/${selectedFiles.length})`);
         const form = new FormData();
         form.append("files", file);
-        const uploadRes = await fetch(`http://localhost:8000/upload?project_slug=${encodeURIComponent(slug)}`, {
-          method: "POST",
-          body: form,
-        });
+          const uploadRes = await fetchWithProject("/upload", {
+            method: "POST",
+            body: form,
+          }, slug);
         if (!uploadRes.ok) {
           throw new Error(`Upload failed: ${uploadRes.statusText}`);
         }
 
-        const normRes = await fetch(`http://localhost:8000/normalize/${encodeURIComponent(filename)}?project_slug=${encodeURIComponent(slug)}`);
+        const normRes = await fetchWithProject(`/normalize/${encodeURIComponent(filename)}`, {}, slug);
         if (!normRes.ok) throw new Error(`Normalization failed: ${normRes.statusText}`);
         const { content: cleaned } = await normRes.json();
 
         // Step 2: Atomize
         setStatusMessage(`Atomizing: ${filename} (${i+1}/${selectedFiles.length})`);
-        const atomRes = await fetch(`http://localhost:8000/atomise/${encodeURIComponent(filename)}?project_slug=${encodeURIComponent(slug)}`);
+        const atomRes = await fetchWithProject(`/atomise/${encodeURIComponent(filename)}`, {}, slug);
         if (!atomRes.ok) throw new Error(`Atomization failed: ${atomRes.statusText}`);
         const { atoms } = await atomRes.json();
 
         // Step 3: Annotate
         setStatusMessage(`Annotating: ${filename} (${i+1}/${selectedFiles.length})`);
-        const annotateRes = await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}&project_slug=${encodeURIComponent(slug)}`, {
+        const annotateRes = await fetchWithProject(`/annotate?filename=${encodeURIComponent(filename)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(atoms),
-        });
+        }, slug);
         if (!annotateRes.ok) throw new Error(`Annotation failed: ${annotateRes.statusText}`);
         const annotated = await annotateRes.json();
 
         // Step 4: Build graph
         setStatusMessage(`Building graph: ${filename} (${i+1}/${selectedFiles.length})`);
-        const graphRes = await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}&project_slug=${encodeURIComponent(slug)}`, {
+        const graphRes = await fetchWithProject(`/graph?filename=${encodeURIComponent(filename)}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(annotated),
-        });
+        }, slug);
         if (!graphRes.ok) throw new Error(`Graph build failed: ${graphRes.statusText}`);
         const graph = await graphRes.json();
 
         // Step 5: Create board
         setStatusMessage(`Creating board: ${filename} (${i+1}/${selectedFiles.length})`);
-        const boardRes = await fetch(`http://localhost:8000/board/create`, {
+        const boardRes = await fetchWithProject("/board/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ atoms: annotated, themes: graph.themes, project_slug: slug, filename }),
-        });
+        }, slug);
         if (!boardRes.ok) throw new Error(`Board creation failed: ${boardRes.statusText}`);
         const board = await boardRes.json();
 
@@ -138,15 +139,6 @@ export default function ComprehensiveShell() {
         });
       }
 
-      updated.push({ 
-        name: filename, 
-        cleaned, 
-        atoms, 
-        annotated, 
-        graph,
-        board,
-        project_slug: slug
-      });
     }
 
     const newFiles = [...files, ...updated];

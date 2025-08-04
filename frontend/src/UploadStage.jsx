@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchWithProject } from "./api";
 import "./UploadStage.css";
 
 const TrashIcon = () => (
@@ -18,7 +19,7 @@ export default function UploadStage({ onFiles, statusMessage, onJump }) {
   const [projects, setProjects] = useState({});
 
   useEffect(() => {
-    fetch("http://localhost:8000/projects")
+    fetchWithProject("/projects")
       .then((r) => r.json())
       .then(setProjects);
   }, []);
@@ -56,14 +57,14 @@ export default function UploadStage({ onFiles, statusMessage, onJump }) {
                   <button
                     className="delete-btn"
                     onClick={async () => {
-                      await fetch(
-                        `http://localhost:8000/projects/${encodeURIComponent(name)}`,
+                      await fetchWithProject(
+                        `/projects/${encodeURIComponent(name)}`,
                         {
                           method: "DELETE",
                         }
                       );
                       // refresh list
-                      fetch("http://localhost:8000/projects")
+                      fetchWithProject("/projects")
                         .then((r) => r.json())
                         .then(setProjects);
                     }}

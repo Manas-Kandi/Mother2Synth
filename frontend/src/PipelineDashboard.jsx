@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import "./PipelineDashboard.css";
+import { fetchWithProject } from "./api";
 import SynthesisDoc from "./SynthesisDoc";
 
 export default function PipelineDashboard({ files }) {
@@ -14,24 +15,24 @@ export default function PipelineDashboard({ files }) {
       const form = new FormData();
       files.forEach(f => form.append("files", f));
       setStatus({ upload: { state: "running" }, step: "upload" });
-      await fetch("http://localhost:8000/upload", { method: "POST", body: form });
+      await fetchWithProject("/upload", { method: "POST", body: form });
       setStatus(s => ({ ...s, upload: { state: "done" }, step: "upload" }));
 
       // 2. Normalize
       setStatus(s => ({ ...s, normalize: { state: "running" }, step: "normalize" }));
-      const normRes = await fetch("http://localhost:8000/normalize");
+      const normRes = await fetchWithProject("/normalize");
       const norm = await normRes.json();
       setStatus(s => ({ ...s, normalize: { state: "done", data: norm }, step: "normalize" }));
 
       // 3. Atomise
       setStatus(s => ({ ...s, atomise: { state: "running" }, step: "atomise" }));
-      const atomRes = await fetch("http://localhost:8000/atomise");
+      const atomRes = await fetchWithProject("/atomise");
       const atoms = await atomRes.json();
       setStatus(s => ({ ...s, atomise: { state: "done", data: atoms }, step: "atomise" }));
 
       // 4. Annotate
       setStatus(s => ({ ...s, annotate: { state: "running" }, step: "annotate" }));
-      const annRes = await fetch("http://localhost:8000/annotate", {
+      const annRes = await fetchWithProject("/annotate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(Object.values(atoms).flat().flat())
