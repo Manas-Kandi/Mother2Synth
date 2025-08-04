@@ -2,45 +2,47 @@ import { useState, useEffect } from "react";
 import "./PipelineDashboard.css";
 import { fetchWithProject } from "./api";
 import SynthesisDoc from "./SynthesisDoc";
+import { useGlobalStore } from "./store";
 
 export default function PipelineDashboard({ files }) {
   const [status, setStatus] = useState({}); // { step, state, data }
   const [expanded, setExpanded] = useState(null);
+  const projectSlug = useGlobalStore((state) => state.projectSlug);
 
   useEffect(() => {
-    if (!files || !files.length) return;
+    if (!files || !files.length || !projectSlug) return;
 
     (async () => {
       // 1. Upload
       const form = new FormData();
       files.forEach(f => form.append("files", f));
-      setStatus({ upload: { state: "running" }, step: "upload" });
-      await fetchWithProject("/upload", { method: "POST", body: form });
+        setStatus({ upload: { state: "running" }, step: "upload" });
+        await fetchWithProject("/upload", { method: "POST", body: form }, projectSlug);
       setStatus(s => ({ ...s, upload: { state: "done" }, step: "upload" }));
 
       // 2. Normalize
-      setStatus(s => ({ ...s, normalize: { state: "running" }, step: "normalize" }));
-      const normRes = await fetchWithProject("/normalize");
+        setStatus(s => ({ ...s, normalize: { state: "running" }, step: "normalize" }));
+        const normRes = await fetchWithProject("/normalize", {}, projectSlug);
       const norm = await normRes.json();
       setStatus(s => ({ ...s, normalize: { state: "done", data: norm }, step: "normalize" }));
 
       // 3. Atomise
-      setStatus(s => ({ ...s, atomise: { state: "running" }, step: "atomise" }));
-      const atomRes = await fetchWithProject("/atomise");
+        setStatus(s => ({ ...s, atomise: { state: "running" }, step: "atomise" }));
+        const atomRes = await fetchWithProject("/atomise", {}, projectSlug);
       const atoms = await atomRes.json();
       setStatus(s => ({ ...s, atomise: { state: "done", data: atoms }, step: "atomise" }));
 
       // 4. Annotate
       setStatus(s => ({ ...s, annotate: { state: "running" }, step: "annotate" }));
-      const annRes = await fetchWithProject("/annotate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(Object.values(atoms).flat().flat())
-      });
-      const annotated = await annRes.json();
+        const annRes = await fetchWithProject("/annotate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(Object.values(atoms).flat().flat())
+        }, projectSlug);
+        const annotated = await annRes.json();
       setStatus(s => ({ ...s, annotate: { state: "done", data: annotated }, step: "annotate" }));
     })();
-  }, [files]);
+  }, [files, projectSlug]);
 
   // If all steps are done, show the SynthesisDoc view for the first file
   const fileKey = files[0]?.name;

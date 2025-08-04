@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useGlobalStore } from "./store";
 import { fetchWithProject } from "./api";
 import "./UploadStage.css";
 
@@ -18,10 +19,12 @@ const TrashIcon = () => (
 export default function UploadStage({
   onFiles,
   statusMessage,
-  projectSlug,
-  setProjectSlug,
   onJump,
 }) {
+  const { projectSlug, setProjectSlug } = useGlobalStore((state) => ({
+    projectSlug: state.projectSlug,
+    setProjectSlug: state.setProjectSlug,
+  }));
   const [projects, setProjects] = useState({});
   const [slugValid, setSlugValid] = useState(false);
 

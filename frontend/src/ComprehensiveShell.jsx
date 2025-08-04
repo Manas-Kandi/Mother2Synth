@@ -32,10 +32,8 @@ export default function ComprehensiveShell() {
   const [files, setFiles] = useState([]);
   const [activeFileIndex, setActiveFileIndex] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
-  const [projectSlug, setProjectSlug] = useState("");
   const [currentContext, setCurrentContext] = useState({});
-  
-  const setSelectedFile = useGlobalStore((state) => state.setSelectedFile);
+  const { projectSlug, setProjectSlug, setSelectedFile } = useGlobalStore((state) => state);
 
   // Context for chat assistant and quality guard
   const updateContext = useCallback(() => {
@@ -279,14 +277,12 @@ export default function ComprehensiveShell() {
       </nav>
 
       <main className="stage-content">
-        {stage === STAGES.UPLOAD && (
-          <UploadStage
-            onFiles={handleFiles}
-            statusMessage={statusMessage}
-            projectSlug={projectSlug}
-            setProjectSlug={setProjectSlug}
-          />
-        )}
+          {stage === STAGES.UPLOAD && (
+            <UploadStage
+              onFiles={handleFiles}
+              statusMessage={statusMessage}
+            />
+          )}
 
         {stage === STAGES.TRANSCRIPT && (
           <TranscriptStage 

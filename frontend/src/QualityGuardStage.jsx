@@ -1,31 +1,37 @@
 import { useState, useEffect } from "react";
 import { fetchWithProject } from "./api";
 import "./QualityGuardStage.css";
+import { useGlobalStore } from "./store";
 
 export default function QualityGuardStage({ file }) {
   const [validationReport, setValidationReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const projectSlug = useGlobalStore((state) => state.projectSlug);
   
 
   useEffect(() => {
     if (file && file.name) {
       runQualityValidation();
     }
-  }, [file]);
+  }, [file, projectSlug]);
 
-  async function runQualityValidation() {
-    if (!file || !file.name || !file.project_slug) {
-      setError("No file selected or missing project information");
-      return;
-    }
+    async function runQualityValidation() {
+      if (!file || !file.name || !projectSlug) {
+        setError("No file selected or missing project information");
+        return;
+      }
 
-    setLoading(true);
-    setError(null);
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetchWithProject(`/quality-guard?filename=${encodeURIComponent(file.name)}`, { method: "POST" }, file.project_slug);
+      try {
+        const response = await fetchWithProject(
+          `/quality-guard?filename=${encodeURIComponent(file.name)}`,
+          { method: "POST" },
+          projectSlug
+        );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
