@@ -1,13 +1,15 @@
 import os
 import json
+import logging
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from llm import gemini_model
 from paths import GRAPH_DIR
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 GRAPH_BUILDER_PROMPT = """You are an insight-web v2 architect.\n\nInput: list of annotated atoms (with insights array).\n\nGoals\n1. Exact edges: keep \"shared label\" edges (weight = min weight ≥ 0.7).\n2. Inference edges: create \"inferred_<type>\" edge when two atoms have semantically related insights (e.g., \"login friction\" ≈ \"wrong password\"); weight = average of the two insight weights, threshold ≥ 0.75.\n3. Auto-themes: group atoms into named themes (≤ 3 words) if ≥ 3 atoms share dominant insight patterns.\n4. Auto-journey: create lightweight \"as-is\" journey by ordering atoms chronologically and tagging each step with dominant pain + emotion.\n\nOutput JSON:\n{\n  \"nodes\": [...],\n  \"edges\": [...],\n  \"clusters\": {...},\n  \"themes\": [\n    {\"name\": \"login friction\", \"atoms\": [...], \"dominant_insights\": {\"pain\": \"login friction\", \"emotion\": \"frustration\"}, \"pain_score\": 0.95}\n  ],\n  \"journey\": [\n    {\"step\": \"login attempt\", \"pain\": \"wrong password\", \"emotion\": \"frustration\", \"atoms\": [...]}\n  ],\n  \"facets\": [...]\n}\n\nRules\n- Exact edge: same label, both weights ≥ 0.7.  \n- Inference edge: semantic similarity ≥ 0.75.  \n- Theme: ≥ 3 atoms.  \n- Journey: keep chronological order.  \n\nReturn strict JSON only."""
 
@@ -25,39 +27,43 @@ async def build_graph(atoms: List[dict], filename: str, project_slug: str = None
     if not project_slug:
         raise HTTPException(status_code=400, detail="project_slug query param required")
     graph_path = dropzone_manager.get_project_path(project_slug, "graphs") / filename.replace(".pdf", ".json")
-    print(f"[DropZone] Graph: graph_path={graph_path}")
-    if graph_path.exists():
-        with open(graph_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+    logger.info("Graph path: %s", graph_path)
+    try:
+        if graph_path.exists():
+            with open(graph_path, "r", encoding="utf-8") as f:
+                return json.load(f)
 
-    nodes = atoms
-    edges = []
-    for i in range(len(nodes)):
-        for j in range(i + 1, len(nodes)):
-            shared = find_shared_insights(nodes[i], nodes[j])
-            if shared:
-                label, _ = shared[0]
-                edges.append({
-                    "source": nodes[i]["id"],
-                    "target": nodes[j]["id"],
-                    "label": label,
-                    "weight": 1,
-                })
+        nodes = atoms
+        edges = []
+        for i in range(len(nodes)):
+            for j in range(i + 1, len(nodes)):
+                shared = find_shared_insights(nodes[i], nodes[j])
+                if shared:
+                    label, _ = shared[0]
+                    edges.append({
+                        "source": nodes[i]["id"],
+                        "target": nodes[j]["id"],
+                        "label": label,
+                        "weight": 1,
+                    })
 
-    graph = {
-        "nodes": nodes,
-        "edges": edges,
-        "clusters": {},
-        "facets": [],
-        "themes": [],
-        "nodes_desc": "List of every atom.",
-        "edges_desc": "Links between atoms sharing high-weight insights.",
-        "clusters_desc": "Auto-groups per insight label (≥ 2 atoms).",
-    }
+        graph = {
+            "nodes": nodes,
+            "edges": edges,
+            "clusters": {},
+            "facets": [],
+            "themes": [],
+            "nodes_desc": "List of every atom.",
+            "edges_desc": "Links between atoms sharing high-weight insights.",
+            "clusters_desc": "Auto-groups per insight label (≥ 2 atoms).",
+        }
 
-    with open(graph_path, "w", encoding="utf-8") as f:
-        json.dump(graph, f, indent=2, ensure_ascii=False)
-    return graph
+        with open(graph_path, "w", encoding="utf-8") as f:
+            json.dump(graph, f, indent=2, ensure_ascii=False)
+        return graph
+    except Exception as e:
+        logger.error("Graph build failed for %s: %s", filename, e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 THEME_CLUSTER_PROMPT = '''You are a UX research theme clustering assistant.\n\nInput: a list of annotated atoms, each with speaker, text, insights, and tags.\n\nYour task:\n- Cluster the atoms into 3-8 high-level themes.\n- Each theme should have:\n  - a short, descriptive name (≤4 words)\n  - a 1-2 sentence summary\n  - a list of atom IDs belonging to the theme\n- Do not create overlapping themes.\n- Every atom must belong to exactly one theme.\n- Use only the information in the atoms and their annotations.\n\nReturn strict JSON:\n[\n  {\n    "name": "Theme name",\n    "summary": "Short summary of the theme.",\n    "atom_ids": ["uuid1", "uuid2", ...]\n  },\n  ...\n]\n\nHere are the annotated atoms:\n{atoms}\n'''

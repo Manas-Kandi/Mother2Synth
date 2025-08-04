@@ -13,28 +13,40 @@ export default function Shell() {
   const [activeFileIndex, setActiveFileIndex] = useState(null); // null until one is clicked
   const [statusMessage, setStatusMessage] = useState("");
   const setSelectedFile = useGlobalStore((state) => state.setSelectedFile);
+  const error = useGlobalStore((state) => state.error);
+  const setError = useGlobalStore((state) => state.setError);
 
   async function loadCached(filename) {
-    const [cleaned, atoms, annotated, graph] = await Promise.all([
-      fetch(`http://localhost:8000/cached/cleaned/${encodeURIComponent(filename)}`).then(r => r.text()),
-      fetch(`http://localhost:8000/cached/atoms/${encodeURIComponent(filename)}`).then(r => r.json()),
-      fetch(`http://localhost:8000/cached/annotated/${encodeURIComponent(filename)}`).then(r => r.json()),
-      fetch(`http://localhost:8000/cached/graph/${encodeURIComponent(filename)}`).then(r => r.json())
+    const [cleanedRes, atomsRes, annotatedRes, graphRes] = await Promise.all([
+      fetch(`http://localhost:8000/cached/cleaned/${encodeURIComponent(filename)}`),
+      fetch(`http://localhost:8000/cached/atoms/${encodeURIComponent(filename)}`),
+      fetch(`http://localhost:8000/cached/annotated/${encodeURIComponent(filename)}`),
+      fetch(`http://localhost:8000/cached/graph/${encodeURIComponent(filename)}`)
     ]);
+    const cleaned = await cleanedRes.text();
+    const atoms = await atomsRes.json();
+    const annotated = await annotatedRes.json();
+    const graph = await graphRes.json();
     return { name: filename, cleaned, atoms, annotated, graph };
   }
 
   async function handleFiles(selectedFiles) {
     if (!selectedFiles.length) return;
 
+    setError(null);
     setStatusMessage("Uploading PDF(s)…");
 
     const form = new FormData();
     selectedFiles.forEach((f) => form.append("files", f));
-    await fetch("http://localhost:8000/upload", {
+    const upRes = await fetch("http://localhost:8000/upload", {
       method: "POST",
       body: form,
     });
+    if (!upRes.ok) {
+      const data = await upRes.json().catch(() => ({}));
+      setError(data.detail || data.error || "Upload failed");
+      return;
+    }
 
     const updated = [];
 
@@ -44,29 +56,47 @@ export default function Shell() {
 
       setStatusMessage(`Cleaning: ${filename} (${i+1}/${selectedFiles.length})`);
       const normRes = await fetch(`http://localhost:8000/normalize/${encodeURIComponent(filename)}`);
+      if (!normRes.ok) {
+        const data = await normRes.json().catch(() => ({}));
+        setError(data.detail || data.error || "Normalize failed");
+        return;
+      }
       const { content: cleaned } = await normRes.json();
 
       setStatusMessage(`Atomizing: ${filename} (${i+1}/${selectedFiles.length})`);
       const atomRes = await fetch(`http://localhost:8000/atomise/${encodeURIComponent(filename)}`);
+      if (!atomRes.ok) {
+        const data = await atomRes.json().catch(() => ({}));
+        setError(data.detail || data.error || "Atomise failed");
+        return;
+      }
       const { atoms } = await atomRes.json();
 
       setStatusMessage(`Annotating: ${filename} (${i+1}/${selectedFiles.length})`);
-      const annotated = await (
-        await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(atoms),
-        })
-      ).json();
+      const annRes = await fetch(`http://localhost:8000/annotate?filename=${encodeURIComponent(filename)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(atoms),
+      });
+      if (!annRes.ok) {
+        const data = await annRes.json().catch(() => ({}));
+        setError(data.detail || data.error || "Annotate failed");
+        return;
+      }
+      const annotated = await annRes.json();
 
       setStatusMessage(`Graphing: ${filename} (${i+1}/${selectedFiles.length})`);
-      const graph = await (
-        await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(annotated),
-        })
-      ).json();
+      const graphRes = await fetch(`http://localhost:8000/graph?filename=${encodeURIComponent(filename)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(annotated),
+      });
+      if (!graphRes.ok) {
+        const data = await graphRes.json().catch(() => ({}));
+        setError(data.detail || data.error || "Graph failed");
+        return;
+      }
+      const graph = await graphRes.json();
 
       updated.push({ name: filename, cleaned, atoms, annotated, graph });
       console.log("✅ Adding file to state:", {
@@ -98,6 +128,7 @@ export default function Shell() {
 
   return (
     <div className="shell">
+      {error && <div className="error-banner">{error}</div>}
       <nav className="rail">
         <div className="rail-section">
           <h3 className="rail-title">Pipeline</h3>
