@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from datetime import datetime
 from typing import Dict, Optional, List
 
@@ -9,6 +10,7 @@ from pydantic import BaseModel
 from paths import COMMENTS_DIR
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class Comment(BaseModel):
@@ -37,7 +39,9 @@ os.makedirs(COMMENTS_DIR, exist_ok=True)
 
 def get_comments_file(filename: str) -> str:
     safe_filename = filename.replace("/", "_").replace("\\", "_")
-    return os.path.join(COMMENTS_DIR, f"{safe_filename}.json")
+    path = os.path.join(COMMENTS_DIR, f"{safe_filename}.json")
+    logger.info("Resolved comments path: %s", os.path.abspath(path))
+    return path
 
 
 def load_comments(filename: str) -> Dict:
@@ -60,6 +64,7 @@ async def get_comments(filename: str):
     try:
         return load_comments(filename)
     except Exception as e:
+        logger.error("Failed to load comments for %s: %s", filename, e)
         raise HTTPException(status_code=500, detail=f"Failed to load comments: {str(e)}")
 
 
@@ -76,6 +81,7 @@ async def add_comment(filename: str, request: CommentRequest) -> CommentResponse
         save_comments(filename, comments_data)
         return CommentResponse(success=True, message="Comment added successfully")
     except Exception as e:
+        logger.error("Failed to save comment for %s: %s", filename, e)
         raise HTTPException(status_code=500, detail=f"Failed to save comment: {str(e)}")
 
 
@@ -97,6 +103,7 @@ async def delete_comment(filename: str, comment_id: int) -> CommentResponse:
     except HTTPException:
         raise
     except Exception as e:
+        logger.error("Failed to delete comment %s for %s: %s", comment_id, filename, e)
         raise HTTPException(status_code=500, detail=f"Failed to delete comment: {str(e)}")
 
 
@@ -127,6 +134,7 @@ async def export_comments(filename: str):
                 })
         return synthesis_format
     except Exception as e:
+        logger.error("Failed to export comments for %s: %s", filename, e)
         raise HTTPException(status_code=500, detail=f"Failed to export comments: {str(e)}")
 
 

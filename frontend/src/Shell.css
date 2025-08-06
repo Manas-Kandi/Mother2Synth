@@ -131,6 +131,18 @@
   background: var(--error);
 }
 
+.error-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--error);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  z-index: 1000;
+}
+
 /* File List */
 .file-item {
   display: flex;

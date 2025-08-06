@@ -3,13 +3,15 @@ import shutil
 import time
 import json
 import fitz
+import logging
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 
 from llm import gemini_model
-from dropzone import DropZoneManager
+from paths import UPLOAD_DIR, CLEANED_DIR, ATOMS_DIR, ANNOTATED_DIR, GRAPH_DIR
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 LLM_PROMPT = """You are a senior UX research assistant.
 
@@ -80,98 +82,100 @@ def extract_text_from_pdf(pdf_path: str) -> str:
 
 
 @router.post("/upload")
-async def upload_pdfs(files: list[UploadFile] = File(...), project_slug: str | None = None):
-    if not project_slug:
-        raise HTTPException(status_code=400, detail="project_slug query param required")
-    dropzone = DropZoneManager(project_slug)
+async def upload_pdfs(files: list[UploadFile] = File(...)):
     saved_files: list[str] = []
     for file in files:
-        file_path = dropzone.get_path("uploads", file.filename)
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        saved_files.append(file.filename)
-    print("Saved files:", saved_files)
+        try:
+            file_path = os.path.join(UPLOAD_DIR, file.filename)
+            logger.info("Saving upload to %s", os.path.abspath(file_path))
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            saved_files.append(file.filename)
+        except Exception as e:
+            logger.error("Error saving %s: %s", file.filename, e)
+            raise HTTPException(status_code=500, detail=str(e))
     return {"message": f"Saved {len(saved_files)} file(s)", "files": saved_files}
 
 
 @router.get("/normalize/{filename}")
-async def normalize_file(filename: str, project_slug: str | None = None):
+async def normalize_file(filename: str):
     if not filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Must be a PDF file")
-    if not project_slug:
-        raise HTTPException(status_code=400, detail="project_slug query param required")
-    dropzone = DropZoneManager(project_slug)
-    cleaned_path = dropzone.get_path("cleaned", filename.replace(".pdf", ".txt"))
+    cleaned_path = os.path.join(CLEANED_DIR, filename.replace(".pdf", ".txt"))
+    logger.info("Resolved cleaned path: %s", os.path.abspath(cleaned_path))
     if os.path.exists(cleaned_path):
         with open(cleaned_path, "r", encoding="utf-8") as f:
             return {"content": f.read()}
-    pdf_path = dropzone.get_path("uploads", filename)
+    pdf_path = os.path.join(UPLOAD_DIR, filename)
+    logger.info("Resolved upload path: %s", os.path.abspath(pdf_path))
     if not os.path.exists(pdf_path):
         raise HTTPException(status_code=404, detail="File not found")
-    raw_text = extract_text_from_pdf(pdf_path)
-    cleaned_text = run_llm_normalizer(raw_text)
-    with open(cleaned_path, "w", encoding="utf-8") as f:
-        f.write(cleaned_text)
-    return {"content": cleaned_text}
+    try:
+        raw_text = extract_text_from_pdf(pdf_path)
+        cleaned_text = run_llm_normalizer(raw_text)
+        with open(cleaned_path, "w", encoding="utf-8") as f:
+            f.write(cleaned_text)
+        return {"content": cleaned_text}
+    except Exception as e:
+        logger.error("Normalization failed for %s: %s", filename, e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/projects")
-async def list_projects(project_slug: str | None = None):
+async def list_projects():
     """Return information about uploaded PDF projects."""
-    if not project_slug:
-        raise HTTPException(status_code=400, detail="project_slug query param required")
-    dropzone = DropZoneManager(project_slug)
     projects = {}
-    uploads_dir = dropzone.get_path("uploads")
-    for filename in os.listdir(uploads_dir):
+    for filename in os.listdir(UPLOAD_DIR):
         if not filename.lower().endswith(".pdf"):
             continue
         base = filename.replace(".pdf", "")
         projects[filename] = {
-            "cleaned": os.path.exists(dropzone.get_path("cleaned", f"{base}.txt")),
-            "atoms": os.path.exists(dropzone.get_path("atoms", f"{base}.json")),
-            "annotated": os.path.exists(dropzone.get_path("annotated", f"{base}.json")),
-            "graph": os.path.exists(dropzone.get_path("graph", f"{base}.json")),
+            "cleaned": os.path.exists(os.path.join(CLEANED_DIR, f"{base}.txt")),
+            "atoms": os.path.exists(os.path.join(ATOMS_DIR, f"{base}.json")),
+            "annotated": os.path.exists(os.path.join(ANNOTATED_DIR, f"{base}.json")),
+            "graph": os.path.exists(os.path.join(GRAPH_DIR, f"{base}.json")),
         }
+    logger.info("Projects listed: %s", list(projects.keys()))
     return projects
 
 
 @router.get("/cached/{stage}/{filename}")
-async def get_cached(stage: str, filename: str, project_slug: str | None = None):
+async def get_cached(stage: str, filename: str):
     """Return cached results for a file if available."""
-    if not project_slug:
-        raise HTTPException(status_code=400, detail="project_slug query param required")
-    dropzone = DropZoneManager(project_slug)
     base = filename.replace(".pdf", "")
     paths = {
-        "cleaned": dropzone.get_path("cleaned", f"{base}.txt"),
-        "atoms": dropzone.get_path("atoms", f"{base}.json"),
-        "annotated": dropzone.get_path("annotated", f"{base}.json"),
-        "graph": dropzone.get_path("graph", f"{base}.json"),
+        "cleaned": os.path.join(CLEANED_DIR, f"{base}.txt"),
+        "atoms": os.path.join(ATOMS_DIR, f"{base}.json"),
+        "annotated": os.path.join(ANNOTATED_DIR, f"{base}.json"),
+        "graph": os.path.join(GRAPH_DIR, f"{base}.json"),
     }
     path = paths.get(stage)
     if not path or not os.path.exists(path):
+        logger.error("Cache miss for stage=%s filename=%s", stage, filename)
         raise HTTPException(status_code=404, detail="not cached")
+    logger.info("Returning cached %s from %s", stage, os.path.abspath(path))
     if stage == "cleaned":
         return PlainTextResponse(open(path, encoding="utf-8").read())
     return JSONResponse(json.load(open(path, encoding="utf-8")))
 
 
 @router.delete("/projects/{filename}")
-async def delete_project(filename: str, project_slug: str | None = None):
+async def delete_project(filename: str):
     """Delete all cached files for a project."""
-    if not project_slug:
-        raise HTTPException(status_code=400, detail="project_slug query param required")
-    dropzone = DropZoneManager(project_slug)
     base = filename.replace(".pdf", "")
     files_to_delete = [
-        dropzone.get_path("uploads", filename),
-        dropzone.get_path("cleaned", f"{base}.txt"),
-        dropzone.get_path("atoms", f"{base}.json"),
-        dropzone.get_path("annotated", f"{base}.json"),
-        dropzone.get_path("graph", f"{base}.json"),
+        os.path.join(UPLOAD_DIR, filename),
+        os.path.join(CLEANED_DIR, f"{base}.txt"),
+        os.path.join(ATOMS_DIR, f"{base}.json"),
+        os.path.join(ANNOTATED_DIR, f"{base}.json"),
+        os.path.join(GRAPH_DIR, f"{base}.json"),
     ]
     for path in files_to_delete:
+        logger.info("Deleting file %s", os.path.abspath(path))
         if os.path.exists(path):
-            os.remove(path)
+            try:
+                os.remove(path)
+            except Exception as e:
+                logger.error("Failed to delete %s: %s", path, e)
+                raise HTTPException(status_code=500, detail=str(e))
     return {"ok": True}

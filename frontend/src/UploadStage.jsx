@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useGlobalStore } from "./store";
 import { fetchWithProject } from "./api";
 import "./UploadStage.css";
 
@@ -18,17 +19,17 @@ const TrashIcon = () => (
 export default function UploadStage({
   onFiles,
   statusMessage,
-  projectSlug,
-  setProjectSlug,
   onJump,
 }) {
   const [projects, setProjects] = useState({});
   const [slugValid, setSlugValid] = useState(false);
+  const { projectSlug, setProjectSlug } = useGlobalStore((state) => state);
 
   useEffect(() => {
     fetchWithProject("/projects", {}, projectSlug)
       .then((r) => r.json())
-      .then(setProjects);
+      .then(setProjects)
+      .catch(console.error);
   }, [projectSlug]);
 
   useEffect(() => {

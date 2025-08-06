@@ -32,10 +32,9 @@ export default function ComprehensiveShell() {
   const [files, setFiles] = useState([]);
   const [activeFileIndex, setActiveFileIndex] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
-  const [projectSlug, setProjectSlug] = useState("");
   const [currentContext, setCurrentContext] = useState({});
   
-  const setSelectedFile = useGlobalStore((state) => state.setSelectedFile);
+  const { projectSlug, setProjectSlug, setSelectedFile } = useGlobalStore((state) => state);
 
   // Context for chat assistant and quality guard
   const updateContext = useCallback(() => {
@@ -150,21 +149,24 @@ export default function ComprehensiveShell() {
         });
       } catch (error) {
         console.error(`Error processing ${selectedFiles[i]?.name}:`, error);
+        encounteredError = true;
+        setStatusMessage(`Error processing ${selectedFiles[i]?.name || 'unknown'}: ${error.message}`);
         updated.push({
           name: selectedFiles[i]?.name || 'unknown',
           status: 'error',
           error: error.message
         });
       }
-
     }
 
     const newFiles = [...files, ...updated];
     setFiles(newFiles);
-    setActiveFileIndex(newFiles.length - updated.length);
-    setSelectedFile(newFiles[newFiles.length - updated.length]?.name || null);
-    setStage(STAGES.TRANSCRIPT);
-    setStatusMessage("Processing complete!");
+    if (!encounteredError) {
+      setActiveFileIndex(newFiles.length - updated.length);
+      setSelectedFile(newFiles[newFiles.length - updated.length]?.name || null);
+      setStage(STAGES.TRANSCRIPT);
+      setStatusMessage("Processing complete!");
+    }
     // Debug: log file structure after processing
     console.log("[DEBUG] Processed files:", newFiles);
   }
@@ -283,8 +285,6 @@ export default function ComprehensiveShell() {
           <UploadStage
             onFiles={handleFiles}
             statusMessage={statusMessage}
-            projectSlug={projectSlug}
-            setProjectSlug={setProjectSlug}
           />
         )}
 

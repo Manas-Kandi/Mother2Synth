@@ -18,20 +18,21 @@ export default function ChatAssistantStage({ file }) {
 
   // Load conversation history
   useEffect(() => {
-    if (file && file.project_slug) {
+    if (projectSlug) {
       loadConversationHistory();
     }
-  }, [file, loadConversationHistory]);
+  }, [projectSlug, loadConversationHistory]);
 
-  async function loadConversationHistory() {
-    if (!file || !file.project_slug) return;
+  const loadConversationHistory = useCallback(async () => {
+    if (!projectSlug) return;
 
     try {
-        const response = await fetchWithProject("/chat/history", {}, file.project_slug);
-      
+      const response = await fetch(
+        `http://localhost:8000/chat/history?project_slug=${encodeURIComponent(projectSlug)}`
+      );
+
       if (response.ok) {
-        await response.json();
-        // Convert history to message format
+        const history = await response.json();
         const chatMessages = [
           {
             role: "assistant",
@@ -39,15 +40,21 @@ export default function ChatAssistantStage({ file }) {
             timestamp: new Date().toISOString()
           }
         ];
-        setMessages(chatMessages);
+        
+        // If there's existing history, load it
+        if (history && history.messages && history.messages.length > 0) {
+          setMessages(history.messages);
+        } else {
+          setMessages(chatMessages);
+        }
       }
     } catch (err) {
       console.error("Failed to load conversation history:", err);
     }
-  }
+  }, [projectSlug]);
 
   async function sendMessage() {
-    if (!inputMessage.trim() || !file || !file.project_slug) return;
+    if (!inputMessage.trim() || !projectSlug) return;
 
     const userMessage = {
       role: "user",

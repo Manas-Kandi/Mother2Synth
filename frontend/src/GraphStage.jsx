@@ -76,13 +76,13 @@ export default function GraphStage({ file }) {
   const [hoverNode, setHoverNode] = useState(null);
   
   const enhanceGraphWithLLM = async (rawGraph) => {
-    if (!rawGraph || !rawGraph.nodes) return null;
+    if (!rawGraph || !rawGraph.nodes || !projectSlug) return null;
     
     try {
       console.log("Enhancing graph with LLM...", rawGraph.nodes.length, "nodes");
       
       // Send nodes to backend for LLM analysis
-      const response = await fetchWithProject('/enhance-graph', {
+      const response = await fetch(`http://localhost:8000/enhance-graph?project_slug=${encodeURIComponent(projectSlug)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -94,7 +94,7 @@ export default function GraphStage({ file }) {
             tags: node.tags || []
           }))
         })
-      }, file?.project_slug);
+      });
       
       if (!response.ok) {
         console.warn('LLM enhancement failed, using original data');

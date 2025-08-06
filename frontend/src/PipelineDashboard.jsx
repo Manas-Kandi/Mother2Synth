@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import "./PipelineDashboard.css";
 import { fetchWithProject } from "./api";
 import SynthesisDoc from "./SynthesisDoc";
+import { useGlobalStore } from "./store";
 
-export default function PipelineDashboard({ files, projectSlug }) {
+export default function PipelineDashboard({ files }) {
   const [status, setStatus] = useState({}); // { step, state, data }
   const [expanded, setExpanded] = useState(null);
+  const projectSlug = useGlobalStore((state) => state.projectSlug);
 
   useEffect(() => {
-    if (!files || !files.length) return;
+    if (!files || !files.length || !projectSlug) return;
 
     (async () => {
       // 1. Upload
@@ -40,7 +42,7 @@ export default function PipelineDashboard({ files, projectSlug }) {
       const annotated = await annRes.json();
       setStatus(s => ({ ...s, annotate: { state: "done", data: annotated }, step: "annotate" }));
     })();
-  }, [files]);
+  }, [files, projectSlug]);
 
   // If all steps are done, show the SynthesisDoc view for the first file
   const fileKey = files[0]?.name;
