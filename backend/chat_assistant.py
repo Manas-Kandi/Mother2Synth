@@ -12,6 +12,7 @@ import logging
 from dataclasses import dataclass, asdict
 
 from paths import get_chat_history_path
+from llm import gemini_model
 
 @dataclass
 class ChatMessage:
@@ -136,29 +137,42 @@ class ChatAssistant:
         return 'general_question'
     
     def _generate_response(self, message: str, intent: str) -> Dict[str, Any]:
-        """Generate contextual response based on intent"""
-        
-        response_data = {
-            'response': '',
+        """Generate a response using the Gemini model and conversation history."""
+
+        history_lines = []
+        for msg in self.conversation_history:
+            content = msg.content
+            if msg.role == "assistant":
+                try:
+                    content = json.loads(content).get("response", content)
+                except json.JSONDecodeError:
+                    pass
+            history_lines.append(f"{msg.role}: {content}")
+
+        conversation_text = "\n".join(history_lines)
+
+        prompt = (
+            "You are a helpful assistant for UX research synthesis. "
+            f"The user's intent is '{intent}'. "
+            "Use the conversation history and provided context to craft your reply.\n\n"
+            f"Context: {json.dumps(self.context)}\n\n"
+            f"{conversation_text}\nassistant:"
+        )
+
+        try:
+            result = gemini_model.generate_content(prompt)
+            response_text = getattr(result, "text", str(result)).strip()
+        except Exception as e:
+            self.logger.error(f"Gemini generation failed: {e}")
+            response_text = "I'm sorry, but I couldn't generate a response right now."
+
+        return {
+            'response': response_text,
             'suggestions': [],
             'actions': [],
-            'context': {}
+            'context': {'intent': intent}
         }
-        
-        if intent == 'explain_theme':
-            return self._explain_theme_response(message)
-        elif intent == 'suggest_improvement':
-            return self._suggest_improvement_response(message)
-        elif intent == 'add_evidence':
-            return self._add_evidence_response(message)
-        elif intent == 'clarify_methodology':
-            return self._clarify_methodology_response(message)
-        elif intent == 'validate_quality':
-            return self._validate_quality_response(message)
-        elif intent == 'export_share':
-            return self._export_share_response(message)
-        else:
-            return self._general_response(message)
+
     
     def _explain_theme_response(self, message: str) -> Dict[str, Any]:
         """Explain themes and their significance"""
