@@ -200,29 +200,51 @@ export default function ComprehensiveShell() {
         const graph = await graphRes.json();
         console.log('Graph built successfully');
 
-        // Step 6: Create board
-        setStatusMessage(`Finalizing: ${filename} (${i+1}/${selectedFiles.length})`);
-        console.log('Creating board...');
-        const boardRes = await fetchWithProject(
-          "/board/create", 
+        // Step 6: Generate initial themes
+        setStatusMessage(`Generating themes: ${filename} (${i+1}/${selectedFiles.length})`);
+        console.log('Fetching initial themes...');
+        const themesRes = await fetchWithProject(
+          `/themes/initial?filename=${encodeURIComponent(filename)}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              atoms: annotated, 
-              themes: graph.themes, 
-              project_slug: slug, 
-              filename 
-            }),
-          }, 
+            body: JSON.stringify(annotated),
+          },
           slug
         );
-        
+
+        if (!themesRes.ok) {
+          const errorText = await themesRes.text().catch(() => 'No error details');
+          throw new Error(`Initial themes fetch failed (${themesRes.status}): ${errorText}`);
+        }
+
+        const initialThemes = await themesRes.json();
+        graph.themes = [...(graph.themes || []), ...initialThemes];
+        console.log('Initial themes generated successfully');
+
+        // Step 7: Create board
+        setStatusMessage(`Finalizing: ${filename} (${i+1}/${selectedFiles.length})`);
+        console.log('Creating board...');
+        const boardRes = await fetchWithProject(
+          "/board/create",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              atoms: annotated,
+              themes: graph.themes,
+              project_slug: slug,
+              filename
+            }),
+          },
+          slug
+        );
+
         if (!boardRes.ok) {
           const errorText = await boardRes.text().catch(() => 'No error details');
           throw new Error(`Board creation failed (${boardRes.status}): ${errorText}`);
         }
-        
+
         const board = await boardRes.json();
         console.log('Board created successfully');
 
