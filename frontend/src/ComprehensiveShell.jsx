@@ -223,8 +223,10 @@ export default function ComprehensiveShell() {
           throw new Error(`Board creation failed (${boardRes.status}): ${errorText}`);
         }
         
-        const board = await boardRes.json();
+        const boardResponse = await boardRes.json();
         console.log('Board created successfully');
+
+        const board = { ...boardResponse.board, board_url: boardResponse.board_url };
 
         // Add to processed files
         const fileData = {
