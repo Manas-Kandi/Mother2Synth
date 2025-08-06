@@ -9,9 +9,17 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 from pathlib import Path
+from paths import get_stage_path
 import asyncio
-from supabase import create_client, Client
-import y_py as Y
+try:
+    from supabase import create_client, Client  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    create_client = None  # type: ignore
+    Client = None
+try:
+    import y_py as Y  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    Y = None
 
 @dataclass
 class BoardElement:
@@ -69,18 +77,22 @@ class BoardCreator:
     
     def __init__(self, project_slug: str, supabase_url: str = None, supabase_key: str = None):
         self.project_slug = project_slug
-        self.boards_dir = Path(f"/DropZone/{project_slug}/boards")
+        self.boards_dir = Path(get_stage_path(project_slug, 'boards'))
         self.boards_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize Supabase client for persistence
-        if supabase_url and supabase_key:
+        if supabase_url and supabase_key and create_client:
             self.supabase: Client = create_client(supabase_url, supabase_key)
         else:
             self.supabase = None
         
-        # Initialize Yjs document for real-time collaboration
-        self.ydoc = Y.YDoc()
-        self.board_state = self.ydoc.get_map("board")
+        # Initialize Yjs document for real-time collaboration if available
+        if Y:
+            self.ydoc = Y.YDoc()
+            self.board_state = self.ydoc.get_map("board")
+        else:
+            self.ydoc = None
+            self.board_state = None
         
     async def create_board(self, themes: List[Dict], atoms: List[Dict], 
                           journey_data: Dict, insights: List[Dict]) -> str:
@@ -141,8 +153,9 @@ class BoardCreator:
         if self.supabase:
             await self._save_to_supabase(board_data)
         
-        # Initialize Yjs document for real-time collaboration
-        self._initialize_yjs_board(board_data)
+        # Initialize Yjs document for real-time collaboration if available
+        if self.ydoc:
+            self._initialize_yjs_board(board_data)
         
         return board_id
     

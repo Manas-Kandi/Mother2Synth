@@ -97,7 +97,7 @@ def fix_json_syntax(raw_json: str) -> str:
         raw_json += "]"
     # Add missing closing brace for the last object
     if '"' in raw_json and not raw_json.strip().endswith("}") and not raw_json.strip().endswith("]"):
-        raw_json += "}"]"
+        raw_json += "}]"
     # Remove trailing commas
     raw_json = re.sub(r',\s*([}\]])', r'\1', raw_json)
     return raw_json

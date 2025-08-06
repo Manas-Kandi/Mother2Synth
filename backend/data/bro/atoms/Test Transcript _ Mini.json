@@ -1,0 +1,394 @@
+[
+  {
+    "id": "2d94c1f6-a4c0-4e78-8d2a-c21e6e0f3c5f",
+    "speaker": "SPEAKER 1",
+    "text": "I usually go through the app",
+    "context": "User describes their typical method of accessing the service.",
+    "entities": {
+      "objects": [
+        "app"
+      ],
+      "tasks": [
+        "accessing service"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "e4b1a03f-7e0b-4c5d-9f8a-0c1e2d3f4a5b",
+    "speaker": "SPEAKER 1",
+    "text": "but not always sometimes I just use the website if I'm already on my computer",
+    "context": "User describes an alternative method of accessing the service depending on their current device.",
+    "entities": {
+      "objects": [
+        "website",
+        "computer"
+      ],
+      "tasks": [
+        "accessing service"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "f8a7e6d5-b4c3-4d2e-a1b0-c3d2e1f0a9b8",
+    "speaker": "SPEAKER 1",
+    "text": "sometimes it’s fine",
+    "context": "User's experience with the login process.",
+    "entities": {
+      "objects": [],
+      "tasks": [
+        "logging in"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "1b2c3d4e-5f6a-7b8c-9d0e-a1b2c3d4e5f6",
+    "speaker": "SPEAKER 1",
+    "text": "but other times it says wrong password",
+    "context": "An issue encountered during the login process.",
+    "entities": {
+      "objects": [
+        "error message",
+        "password field"
+      ],
+      "tasks": [
+        "logging in"
+      ],
+      "emotions": [
+        "frustration"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+    "speaker": "SPEAKER 1",
+    "text": "even though I KNOW it’s not wrong like I literally copy paste it from my notes",
+    "context": "User's certainty about the password being correct, suggesting a system error.",
+    "entities": {
+      "objects": [
+        "password",
+        "notes"
+      ],
+      "tasks": [
+        "copy-pasting"
+      ],
+      "emotions": [
+        "frustration",
+        "certainty"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+    "speaker": "SPEAKER 1",
+    "text": "and then I try the reset thing",
+    "context": "User attempts to resolve the password issue.",
+    "entities": {
+      "objects": [
+        "reset password feature"
+      ],
+      "tasks": [
+        "resetting password"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "9f0a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+    "speaker": "SPEAKER 1",
+    "text": "but then no email comes",
+    "context": "Failure of the password reset email to arrive.",
+    "entities": {
+      "objects": [
+        "email",
+        "password reset email"
+      ],
+      "tasks": [
+        "receiving email"
+      ],
+      "emotions": [
+        "frustration"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+    "speaker": "SPEAKER 1",
+    "text": "and I’m like ?? hello??",
+    "context": "User expresses confusion and exasperation.",
+    "entities": {
+      "objects": [],
+      "tasks": [],
+      "emotions": [
+        "confusion",
+        "exasperation"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "0c1d2e3f-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
+    "speaker": "SPEAKER 1",
+    "text": "sometimes it works but not consistently",
+    "context": "General comment on the unreliability of the system/features.",
+    "entities": {
+      "objects": [],
+      "tasks": [],
+      "emotions": [
+        "frustration"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "6a7b8c9d-0e1f-2a3b-4c5d-6e7f8a9b0c1d",
+    "speaker": "SPEAKER 1",
+    "text": "I just give up usually",
+    "context": "User's typical response to encountering persistent issues.",
+    "entities": {
+      "objects": [],
+      "tasks": [
+        "giving up"
+      ],
+      "emotions": [
+        "resignation",
+        "frustration"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+    "speaker": "SPEAKER 1",
+    "text": "like I don’t have time to deal with that.",
+    "context": "User's reasoning for giving up.",
+    "entities": {
+      "objects": [],
+      "tasks": [],
+      "emotions": [
+        "time pressure",
+        "frustration"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "8d9e0f1a-2b3c-4d5e-6f7a-8b9c0d1e2f3a",
+    "speaker": "SPEAKER 1",
+    "text": "Sometimes the site freezes too",
+    "context": "A performance issue experienced with the website.",
+    "entities": {
+      "objects": [
+        "website"
+      ],
+      "tasks": [],
+      "emotions": [
+        "frustration"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "4e5f6a7b-8c9d-0e1f-2a3b-4c5d6e7f8a9b",
+    "speaker": "SPEAKER 1",
+    "text": "or it just doesn’t click when you press stuff",
+    "context": "A UI responsiveness issue.",
+    "entities": {
+      "objects": [
+        "buttons",
+        "UI elements"
+      ],
+      "tasks": [
+        "clicking"
+      ],
+      "emotions": [
+        "frustration"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "0f1a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+    "speaker": "SPEAKER 1",
+    "text": "like it lags",
+    "context": "Another performance issue with the website.",
+    "entities": {
+      "objects": [
+        "website"
+      ],
+      "tasks": [],
+      "emotions": [
+        "frustration"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e",
+    "speaker": "SPEAKER 1",
+    "text": "and I don’t know if it went through or not.",
+    "context": "Lack of feedback from the system after an action.",
+    "entities": {
+      "objects": [],
+      "tasks": [
+        "performing actions"
+      ],
+      "emotions": [
+        "uncertainty",
+        "frustration"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+    "speaker": "SPEAKER 1",
+    "text": "idk yeah I guess like once or twice a week maybe.",
+    "context": "User estimates the frequency of the issues.",
+    "entities": {
+      "objects": [],
+      "tasks": [],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+    "speaker": "SPEAKER 1",
+    "text": "one time I was filling out this form thing",
+    "context": "User describes a specific instance of interaction with the system.",
+    "entities": {
+      "objects": [
+        "form"
+      ],
+      "tasks": [
+        "filling out a form"
+      ],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "9f0a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+    "speaker": "SPEAKER 1",
+    "text": "and got a call and came back and like it was GONE.",
+    "context": "User experienced data loss after an interruption.",
+    "entities": {
+      "objects": [
+        "form data"
+      ],
+      "tasks": [],
+      "emotions": [
+        "frustration",
+        "surprise"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+    "speaker": "SPEAKER 1",
+    "text": "No autosave or anything.",
+    "context": "User highlights the lack of a data persistence feature.",
+    "entities": {
+      "objects": [
+        "autosave feature"
+      ],
+      "tasks": [
+        "saving data"
+      ],
+      "emotions": [
+        "frustration"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "0c1d2e3f-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
+    "speaker": "SPEAKER 1",
+    "text": "my friend doesn’t have these issues",
+    "context": "User compares their experience to a friend's.",
+    "entities": {
+      "objects": [],
+      "tasks": [],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "6a7b8c9d-0e1f-2a3b-4c5d-6e7f8a9b0c1d",
+    "speaker": "SPEAKER 1",
+    "text": "but he’s on iPhone",
+    "context": "Information about the friend's device type.",
+    "entities": {
+      "objects": [
+        "iPhone"
+      ],
+      "tasks": [],
+      "emotions": []
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+    "speaker": "SPEAKER 1",
+    "text": "so maybe it’s an Android thing?",
+    "context": "User hypothesizes about the cause of the issues.",
+    "entities": {
+      "objects": [
+        "Android"
+      ],
+      "tasks": [],
+      "emotions": [
+        "speculation"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  },
+  {
+    "id": "8d9e0f1a-2b3c-4d5e-6f7a-8b9c0d1e2f3a",
+    "speaker": "SPEAKER 1",
+    "text": "Not sure.",
+    "context": "User expresses uncertainty about their hypothesis.",
+    "entities": {
+      "objects": [],
+      "tasks": [],
+      "emotions": [
+        "uncertainty"
+      ]
+    },
+    "confidence": "high",
+    "source_file": "Test Transcript _ Mini.pdf"
+  }
+]

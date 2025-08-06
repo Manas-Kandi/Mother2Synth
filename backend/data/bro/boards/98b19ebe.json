@@ -1,0 +1,746 @@
+{
+  "id": "98b19ebe",
+  "project_slug": "bro",
+  "created_at": "2025-08-06T16:48:25.761924",
+  "updated_at": "2025-08-06T16:48:25.761993",
+  "elements": {
+    "quote_0": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 150,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "I usually go through the app",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "2d94c1f6-a4c0-4e78-8d2a-c21e6e0f3c5f",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "app",
+          "usually"
+        ]
+      }
+    },
+    "quote_1": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 210,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "but not always sometimes I just use the website if I'm already on my computer",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "e4b1a03f-7e0b-4c5d-9f8a-0c1e2d3f4a5b",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "website",
+          "computer",
+          "desktop"
+        ]
+      }
+    },
+    "quote_2": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 270,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "sometimes it\u2019s fine",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "f8a7e6d5-b4c3-4d2e-a1b0-c3d2e1f0a9b8",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "sometimes",
+          "inconsistent",
+          "intermittent",
+          "unreliable"
+        ]
+      }
+    },
+    "quote_3": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 330,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "but other times it says wrong password",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "1b2c3d4e-5f6a-7b8c-9d0e-a1b2c3d4e5f6",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "login",
+          "password",
+          "error message",
+          "intermittent",
+          "authentication"
+        ]
+      }
+    },
+    "quote_4": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 390,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "even though I KNOW it\u2019s not wrong like I literally copy paste it from my notes",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "copy paste",
+          "validation",
+          "error",
+          "accuracy"
+        ]
+      }
+    },
+    "quote_5": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 450,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "and then I try the reset thing",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "reset",
+          "troubleshooting",
+          "problem"
+        ]
+      }
+    },
+    "quote_6": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 510,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "but then no email comes",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "9f0a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "email",
+          "delivery",
+          "missing",
+          "notification"
+        ]
+      }
+    },
+    "quote_7": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 570,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "and I\u2019m like ?? hello??",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "unresponsive",
+          "query",
+          "waiting",
+          "acknowledgement"
+        ]
+      }
+    },
+    "quote_8": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 630,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "sometimes it works but not consistently",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "0c1d2e3f-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "inconsistency",
+          "intermittent",
+          "unreliable",
+          "predictability",
+          "frustration"
+        ]
+      }
+    },
+    "quote_9": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 690,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "I just give up usually",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "6a7b8c9d-0e1f-2a3b-4c5d-6e7f8a9b0c1d",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "give up",
+          "usually",
+          "abandonment"
+        ]
+      }
+    },
+    "quote_10": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 750,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "like I don\u2019t have time to deal with that.",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "time",
+          "effort",
+          "frustration",
+          "abandonment",
+          "efficiency"
+        ]
+      }
+    },
+    "quote_11": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 810,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "Sometimes the site freezes too",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "8d9e0f1a-2b3c-4d5e-6f7a-8b9c0d1e2f3a",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "site",
+          "freezing",
+          "performance",
+          "intermittent"
+        ]
+      }
+    },
+    "quote_12": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 870,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "or it just doesn\u2019t click when you press stuff",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "4e5f6a7b-8c9d-0e1f-2a3b-4c5d6e7f8a9b",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "unresponsive",
+          "interaction",
+          "feedback"
+        ]
+      }
+    },
+    "quote_13": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 930,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "like it lags",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "0f1a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "lag",
+          "performance",
+          "slowness"
+        ]
+      }
+    },
+    "quote_14": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 990,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "and I don\u2019t know if it went through or not.",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "confirmation",
+          "feedback",
+          "status",
+          "uncertainty"
+        ]
+      }
+    },
+    "quote_15": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 1050,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "idk yeah I guess like once or twice a week maybe.",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "weekly",
+          "occasional",
+          "frequency",
+          "intermittent"
+        ]
+      }
+    },
+    "quote_16": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 1110,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "one time I was filling out this form thing",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "form",
+          "filling out"
+        ]
+      }
+    },
+    "quote_17": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 1170,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "and got a call and came back and like it was GONE.",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "9f0a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "gone",
+          "interruption",
+          "data loss",
+          "progress loss",
+          "call"
+        ]
+      }
+    },
+    "quote_18": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 1230,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "No autosave or anything.",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "autosave",
+          "data loss",
+          "saving",
+          "feature"
+        ]
+      }
+    },
+    "quote_19": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 1290,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "my friend doesn\u2019t have these issues",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "0c1d2e3f-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "friend",
+          "comparison",
+          "discrepancy",
+          "issues",
+          "user experience"
+        ]
+      }
+    },
+    "quote_20": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 1350,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "but he\u2019s on iPhone",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "6a7b8c9d-0e1f-2a3b-4c5d-6e7f8a9b0c1d",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "iPhone",
+          "mobile"
+        ]
+      }
+    },
+    "quote_21": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 1410,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "so maybe it\u2019s an Android thing?",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "Android",
+          "device",
+          "issue",
+          "troubleshooting"
+        ]
+      }
+    },
+    "quote_22": {
+      "type": "sticky",
+      "x": 1500,
+      "y": 1470,
+      "width": 280,
+      "height": 50,
+      "style": {
+        "color": "#f0f0f0",
+        "fill": "semi",
+        "stroke": "#999999",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "Not sure.",
+        "font": "mono",
+        "size": "small",
+        "color": "#333333"
+      },
+      "metadata": {
+        "type": "quote",
+        "atom_id": "8d9e0f1a-2b3c-4d5e-6f7a-8b9c0d1e2f3a",
+        "speaker": "SPEAKER 1",
+        "sentiment": null,
+        "tags": [
+          "uncertainty",
+          "confusion",
+          "hesitation"
+        ]
+      }
+    }
+  },
+  "layout": {
+    "journey_map": {
+      "x": 100,
+      "y": 100,
+      "width": 400,
+      "height": 600
+    },
+    "theme_clusters": {
+      "x": 600,
+      "y": 100,
+      "width": 800,
+      "height": 600
+    },
+    "quote_bank": {
+      "x": 1500,
+      "y": 100,
+      "width": 300,
+      "height": 600
+    },
+    "opportunities": {
+      "x": 100,
+      "y": 750,
+      "width": 1700,
+      "height": 200
+    },
+    "questions": {
+      "x": 100,
+      "y": 50,
+      "width": 1700,
+      "height": 50
+    }
+  }
+}

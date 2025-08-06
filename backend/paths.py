@@ -63,10 +63,10 @@ def get_atoms_path(project_slug: str, filename: str) -> str:
     return os.path.join(get_stage_path(project_slug, 'atoms'), f"{base}.json")
 
 def get_annotated_path(project_slug: str, filename: str) -> str:
-    """Get the absolute path for an annotated atoms file in a project."""
-    safe_slug = sanitize_slug(project_slug)
-    base_name = os.path.splitext(filename)[0]
-    return os.path.join(DATA_DIR, safe_slug, "annotated", f"{base_name}.json")
+    """Returns the full path for an annotated atoms JSON file within its project."""
+    base, _ = os.path.splitext(filename)
+    # Reuse get_stage_path so the 'annotated' directory is created automatically
+    return os.path.join(get_stage_path(project_slug, 'annotated'), f"{base}.json")
 
 def get_chat_history_path(project_slug: str) -> str:
     """Get the absolute path for a project's chat history file."""

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from paths import ensure_dirs
-from routes import upload, atoms, graph, comments, quality_guard, chat
+from routes import upload, atoms, graph, comments, quality_guard, chat, board
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,3 +42,4 @@ app.include_router(graph.router)
 app.include_router(comments.router)
 app.include_router(quality_guard.router)
 app.include_router(chat.router)
+app.include_router(board.router)
