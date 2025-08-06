@@ -28,13 +28,16 @@ async def create_board(
     """
     try:
         creator = BoardCreator(project_slug)
-        board_id = await creator.create_board(
+        board_data, board_url = await creator.create_board(
             payload.themes,
             payload.atoms,
             payload.journey_data,
             payload.insights,
         )
-        return {"board_id": board_id}
+        response = {"board": board_data}
+        if board_url:
+            response["board_url"] = board_url
+        return response
     except Exception as e:
         logger.exception("Board creation failed for project %s: %s", project_slug, e)
         raise HTTPException(status_code=500, detail=str(e))

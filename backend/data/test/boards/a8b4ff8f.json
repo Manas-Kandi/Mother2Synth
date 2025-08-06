@@ -1,9 +1,177 @@
 {
-  "id": "98b19ebe",
-  "project_slug": "bro",
-  "created_at": "2025-08-06T16:48:25.761924",
-  "updated_at": "2025-08-06T16:48:25.761993",
+  "id": "a8b4ff8f",
+  "project_slug": "test",
+  "created_at": "2025-08-06T17:50:13.571570",
+  "updated_at": "2025-08-06T17:50:13.571581",
   "elements": {
+    "theme_cluster_0": {
+      "type": "sticky",
+      "x": 600,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "rotation": 0,
+      "style": {
+        "color": "#87CEEB",
+        "fill": "semi",
+        "stroke": "#000000",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "Service Access Channels",
+        "font": "mono",
+        "size": "medium",
+        "color": "#000000"
+      },
+      "metadata": {
+        "type": "theme_cluster",
+        "theme_name": "Service Access Channels",
+        "quotes": [],
+        "participants": [],
+        "pain_points": [],
+        "opportunities": []
+      }
+    },
+    "theme_cluster_1": {
+      "type": "sticky",
+      "x": 820,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "rotation": 0,
+      "style": {
+        "color": "#DDA0DD",
+        "fill": "semi",
+        "stroke": "#000000",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "Inconsistent Login Issues",
+        "font": "mono",
+        "size": "medium",
+        "color": "#000000"
+      },
+      "metadata": {
+        "type": "theme_cluster",
+        "theme_name": "Inconsistent Login Issues",
+        "quotes": [],
+        "participants": [],
+        "pain_points": [],
+        "opportunities": []
+      }
+    },
+    "theme_cluster_2": {
+      "type": "sticky",
+      "x": 1040,
+      "y": 150,
+      "width": 200,
+      "height": 150,
+      "rotation": 0,
+      "style": {
+        "color": "#98FB98",
+        "fill": "semi",
+        "stroke": "#000000",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "Website Performance Problems",
+        "font": "mono",
+        "size": "medium",
+        "color": "#000000"
+      },
+      "metadata": {
+        "type": "theme_cluster",
+        "theme_name": "Website Performance Problems",
+        "quotes": [],
+        "participants": [],
+        "pain_points": [],
+        "opportunities": []
+      }
+    },
+    "theme_cluster_3": {
+      "type": "sticky",
+      "x": 600,
+      "y": 320,
+      "width": 200,
+      "height": 150,
+      "rotation": 0,
+      "style": {
+        "color": "#D3D3D3",
+        "fill": "semi",
+        "stroke": "#000000",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "Data Loss & Autosave",
+        "font": "mono",
+        "size": "medium",
+        "color": "#000000"
+      },
+      "metadata": {
+        "type": "theme_cluster",
+        "theme_name": "Data Loss & Autosave",
+        "quotes": [],
+        "participants": [],
+        "pain_points": [],
+        "opportunities": []
+      }
+    },
+    "theme_cluster_4": {
+      "type": "sticky",
+      "x": 820,
+      "y": 320,
+      "width": 200,
+      "height": 150,
+      "rotation": 0,
+      "style": {
+        "color": "#E6E6FA",
+        "fill": "semi",
+        "stroke": "#000000",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "Task Abandonment & Frustration",
+        "font": "mono",
+        "size": "medium",
+        "color": "#000000"
+      },
+      "metadata": {
+        "type": "theme_cluster",
+        "theme_name": "Task Abandonment & Frustration",
+        "quotes": [],
+        "participants": [],
+        "pain_points": [],
+        "opportunities": []
+      }
+    },
+    "theme_cluster_5": {
+      "type": "sticky",
+      "x": 1040,
+      "y": 320,
+      "width": 200,
+      "height": 150,
+      "rotation": 0,
+      "style": {
+        "color": "#87CEEB",
+        "fill": "semi",
+        "stroke": "#000000",
+        "strokeWidth": 1
+      },
+      "label": {
+        "text": "Platform-Specific Issues",
+        "font": "mono",
+        "size": "medium",
+        "color": "#000000"
+      },
+      "metadata": {
+        "type": "theme_cluster",
+        "theme_name": "Platform-Specific Issues",
+        "quotes": [],
+        "participants": [],
+        "pain_points": [],
+        "opportunities": []
+      }
+    },
     "quote_0": {
       "type": "sticky",
       "x": 1500,
@@ -24,12 +192,14 @@
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "2d94c1f6-a4c0-4e78-8d2a-c21e6e0f3c5f",
+        "atom_id": "a1b2c3d4-e5f6-4789-90ab-cdef01234567",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
           "app",
-          "usually"
+          "mobile",
+          "habit",
+          "usage"
         ]
       }
     },
@@ -53,13 +223,14 @@
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "e4b1a03f-7e0b-4c5d-9f8a-0c1e2d3f4a5b",
+        "atom_id": "b2c3d4e5-f6a7-4890-bcde-f01234567890",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "website",
           "computer",
-          "desktop"
+          "website",
+          "desktop",
+          "conditional usage"
         ]
       }
     },
@@ -83,14 +254,14 @@
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "f8a7e6d5-b4c3-4d2e-a1b0-c3d2e1f0a9b8",
+        "atom_id": "c3d4e5f6-a7b8-4901-cdef-012345678901",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
           "sometimes",
           "inconsistent",
           "intermittent",
-          "unreliable"
+          "reliability"
         ]
       }
     },
@@ -114,15 +285,15 @@
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "1b2c3d4e-5f6a-7b8c-9d0e-a1b2c3d4e5f6",
+        "atom_id": "d4e5f6a7-b8c9-4012-def0-123456789012",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "login",
           "password",
-          "error message",
-          "intermittent",
-          "authentication"
+          "login",
+          "error",
+          "authentication",
+          "intermittent"
         ]
       }
     },
@@ -139,21 +310,23 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "even though I KNOW it\u2019s not wrong like I literally copy paste it from my notes",
+        "text": "even though I KNOW it\u2019s not wrong",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+        "atom_id": "e5f6a7b8-c9d0-4123-ef01-234567890123",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "copy paste",
-          "validation",
-          "error",
-          "accuracy"
+          "knowledge",
+          "correctness",
+          "misleading",
+          "dissonance",
+          "trust",
+          "feedback"
         ]
       }
     },
@@ -170,20 +343,21 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "and then I try the reset thing",
+        "text": "like I literally copy paste it from my notes.",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+        "atom_id": "f6a7b8c9-d0e1-4234-f012-345678901234",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "reset",
-          "troubleshooting",
-          "problem"
+          "copy paste",
+          "notes",
+          "manual process",
+          "data entry"
         ]
       }
     },
@@ -200,21 +374,20 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "but then no email comes",
+        "text": "and then I try the reset thing",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "9f0a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+        "atom_id": "a7b8c9d0-e1f2-4345-0123-456789012345",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "email",
-          "delivery",
-          "missing",
-          "notification"
+          "reset",
+          "troubleshooting",
+          "workaround"
         ]
       }
     },
@@ -231,21 +404,22 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "and I\u2019m like ?? hello??",
+        "text": "but then no email comes",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+        "atom_id": "b8c9d0e1-f2a3-4456-1234-567890123456",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "unresponsive",
-          "query",
-          "waiting",
-          "acknowledgement"
+          "email",
+          "delivery",
+          "missing",
+          "notification",
+          "confirmation"
         ]
       }
     },
@@ -262,21 +436,21 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "sometimes it works but not consistently",
+        "text": "and I\u2019m like ?? hello??",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "0c1d2e3f-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
+        "atom_id": "c9d0e1f2-a3b4-4567-2345-678901234567",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "inconsistency",
-          "intermittent",
-          "unreliable",
-          "predictability",
+          "unresponsive",
+          "no response",
+          "waiting",
+          "confusion",
           "frustration"
         ]
       }
@@ -294,20 +468,21 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "I just give up usually",
+        "text": "sometimes it works but not consistently.",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "6a7b8c9d-0e1f-2a3b-4c5d-6e7f8a9b0c1d",
+        "atom_id": "d0e1f2a3-b4c5-4678-3456-789012345678",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "give up",
-          "usually",
-          "abandonment"
+          "inconsistent",
+          "unreliable",
+          "intermittent",
+          "sporadic"
         ]
       }
     },
@@ -324,22 +499,22 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "like I don\u2019t have time to deal with that.",
+        "text": "I just give up usually",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+        "atom_id": "e1f2a3b4-c5d6-4789-4567-890123456789",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "time",
-          "effort",
+          "give up",
+          "abandon",
           "frustration",
-          "abandonment",
-          "efficiency"
+          "recurring",
+          "blocker"
         ]
       }
     },
@@ -356,21 +531,21 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "Sometimes the site freezes too",
+        "text": "like I don\u2019t have time to deal with that.",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "8d9e0f1a-2b3c-4d5e-6f7a-8b9c0d1e2f3a",
+        "atom_id": "f2a3b4c5-d6e7-4890-5678-901234567890",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "site",
-          "freezing",
-          "performance",
-          "intermittent"
+          "time",
+          "efficiency",
+          "frustration",
+          "busy"
         ]
       }
     },
@@ -387,20 +562,20 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "or it just doesn\u2019t click when you press stuff",
+        "text": "Sometimes the site freezes too",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "4e5f6a7b-8c9d-0e1f-2a3b-4c5d6e7f8a9b",
+        "atom_id": "a3b4c5d6-e7f8-4901-6789-012345678901",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "unresponsive",
-          "interaction",
-          "feedback"
+          "site",
+          "freezes",
+          "performance"
         ]
       }
     },
@@ -417,20 +592,21 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "like it lags",
+        "text": "or it just doesn\u2019t click when you press stuff",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "0f1a2b3c-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+        "atom_id": "b4c5d6e7-f8a9-4012-7890-123456789012",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "lag",
-          "performance",
-          "slowness"
+          "unresponsive",
+          "interaction",
+          "click",
+          "button"
         ]
       }
     },
@@ -447,21 +623,20 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "and I don\u2019t know if it went through or not.",
+        "text": "like it lags",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e",
+        "atom_id": "c5d6e7f8-a9b0-4123-8901-234567890123",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "confirmation",
-          "feedback",
-          "status",
-          "uncertainty"
+          "lag",
+          "performance",
+          "slow"
         ]
       }
     },
@@ -478,21 +653,21 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "idk yeah I guess like once or twice a week maybe.",
+        "text": "and I don\u2019t know if it went through or not.",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+        "atom_id": "d6e7f8a9-b0c1-4234-9012-345678901234",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "weekly",
-          "occasional",
-          "frequency",
-          "intermittent"
+          "confirmation",
+          "feedback",
+          "uncertainty",
+          "status"
         ]
       }
     },
@@ -509,19 +684,20 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "one time I was filling out this form thing",
+        "text": "I guess like once or twice a week maybe.",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+        "atom_id": "e7f8a9b0-c1d2-4345-0123-456789012345",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "form",
-          "filling out"
+          "weekly",
+          "usage",
+          "cadence"
         ]
       }
     },
@@ -538,22 +714,20 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "and got a call and came back and like it was GONE.",
+        "text": "one time I was filling out this form thing",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "9f0a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+        "atom_id": "f8a9b0c1-d2e3-4456-1234-567890123456",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "gone",
-          "interruption",
-          "data loss",
-          "progress loss",
-          "call"
+          "form",
+          "data entry",
+          "one-time use"
         ]
       }
     },
@@ -570,21 +744,22 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "No autosave or anything.",
+        "text": "and got a call and came back and like it was GONE.",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+        "atom_id": "a9b0c1d2-e3f4-4567-2345-678901234567",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "autosave",
+          "interruption",
           "data loss",
-          "saving",
-          "feature"
+          "content gone",
+          "progress lost",
+          "frustration"
         ]
       }
     },
@@ -601,22 +776,21 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "my friend doesn\u2019t have these issues",
+        "text": "No autosave or anything.",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "0c1d2e3f-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
+        "atom_id": "b0c1d2e3-f4a5-4678-3456-789012345678",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "friend",
-          "comparison",
-          "discrepancy",
-          "issues",
-          "user experience"
+          "autosave",
+          "data loss",
+          "feature gap",
+          "saving"
         ]
       }
     },
@@ -633,19 +807,21 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "but he\u2019s on iPhone",
+        "text": "my friend doesn\u2019t have these issues",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "6a7b8c9d-0e1f-2a3b-4c5d-6e7f8a9b0c1d",
+        "atom_id": "c1d2e3f4-a5b6-4789-4567-890123456789",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
-          "iPhone",
-          "mobile"
+          "friend",
+          "issues",
+          "comparison",
+          "different experience"
         ]
       }
     },
@@ -662,21 +838,21 @@
         "strokeWidth": 1
       },
       "label": {
-        "text": "so maybe it\u2019s an Android thing?",
+        "text": "but he\u2019s on iPhone so maybe it\u2019s an Android thing?",
         "font": "mono",
         "size": "small",
         "color": "#333333"
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+        "atom_id": "d2e3f4a5-b6c7-4890-5678-901234567890",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
+          "iPhone",
           "Android",
           "device",
-          "issue",
-          "troubleshooting"
+          "platform"
         ]
       }
     },
@@ -700,13 +876,14 @@
       },
       "metadata": {
         "type": "quote",
-        "atom_id": "8d9e0f1a-2b3c-4d5e-6f7a-8b9c0d1e2f3a",
+        "atom_id": "e3f4a5b6-c7d8-4901-6789-012345678901",
         "speaker": "SPEAKER 1",
         "sentiment": null,
         "tags": [
           "uncertainty",
-          "confusion",
-          "hesitation"
+          "hesitation",
+          "indecision",
+          "lack of clarity"
         ]
       }
     }

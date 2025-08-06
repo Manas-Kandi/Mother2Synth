@@ -86,7 +86,7 @@ export default function ChatAssistantStage({ file }) {
             stage: "quality_assurance"
           }
         })
-      }, file.project_slug);
+      }, projectSlug);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

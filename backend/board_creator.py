@@ -6,7 +6,7 @@ Real-time collaborative whiteboard with journey mapping and theme visualization
 import json
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from paths import get_stage_path
@@ -95,7 +95,7 @@ class BoardCreator:
             self.board_state = None
         
     async def create_board(self, themes: List[Dict], atoms: List[Dict], 
-                          journey_data: Dict, insights: List[Dict]) -> str:
+                          journey_data: Dict, insights: List[Dict]) -> Tuple[Dict[str, Any], Optional[str]]:
         """
         Create a comprehensive research synthesis board
         
@@ -157,7 +157,8 @@ class BoardCreator:
         if self.ydoc:
             self._initialize_yjs_board(board_data)
         
-        return board_id
+        board_url = self.get_board_url(board_id)
+        return board_data, board_url
     
     def _create_journey_map(self, journey_data: Dict) -> Dict[str, Any]:
         """Create journey map elements"""
@@ -507,14 +508,15 @@ class BoardCreator:
 # Example usage
 async def create_research_board(project_slug: str, themes: List[Dict], 
                                atoms: List[Dict], journey_data: Dict, 
-                               insights: List[Dict]) -> str:
+                               insights: List[Dict]) -> Dict[str, Any]:
     """Create a complete research synthesis board"""
     
     creator = BoardCreator(project_slug)
-    board_id = await creator.create_board(themes, atoms, journey_data, insights)
+    board_data, board_url = await creator.create_board(themes, atoms, journey_data, insights)
+    board_id = board_data.get('id')
     
     return {
         'board_id': board_id,
-        'board_url': creator.get_board_url(board_id),
+        'board_url': board_url,
         'export_url': f"/api/export/{board_id}"
     }

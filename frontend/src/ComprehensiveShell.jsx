@@ -245,7 +245,8 @@ export default function ComprehensiveShell() {
           throw new Error(`Board creation failed (${boardRes.status}): ${errorText}`);
         }
 
-        const board = await boardRes.json();
+        const boardResponse = await boardRes.json();
+        const board = { ...boardResponse.board, board_url: boardResponse.board_url };
         console.log('Board created successfully');
 
         // Add to processed files
@@ -463,19 +464,7 @@ export default function ComprehensiveShell() {
         )}
       </main>
 
-      {/* Global status bar */}
-      <div className="status-bar">
-        <div className="status-left">
-          {statusMessage && <span className="status-message">{statusMessage}</span>}
-        </div>
-        <div className="status-right">
-          {getActiveFile() && (
-            <span className="file-info">
-              {getActiveFile().name} - Stage {stage + 1}/8
-            </span>
-          )}
-        </div>
-      </div>
+
     </div>
   );
 }
