@@ -91,7 +91,7 @@
 .graph-container {
   flex: 1;
   position: relative;
-  background: #0a0a0a;
+  background: var(--bg);
   overflow: hidden;
   pointer-events: auto; /* Ensure graph can receive events */
 }
@@ -179,18 +179,18 @@
 }
 
 .sentiment-positive {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--accent);
 }
 
 .sentiment-negative {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  background: color-mix(in srgb, var(--error) 20%, transparent);
+  color: var(--error);
 }
 
 .sentiment-neutral {
-  background: rgba(107, 114, 128, 0.2);
-  color: #6b7280;
+  background: color-mix(in srgb, var(--muted) 20%, transparent);
+  color: var(--muted);
 }
 
 .node-text {
@@ -343,8 +343,8 @@
   top: 80px;
   right: 20px;
   width: 300px;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   z-index: 100;
@@ -357,11 +357,11 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border);
 }
 
 .panel-header h3 {
-  color: #00ffff;
+  color: var(--accent);
   margin: 0;
   font-size: 1rem;
 }
@@ -369,7 +369,7 @@
 .close-btn {
   background: none;
   border: none;
-  color: #666;
+  color: var(--muted);
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0;
@@ -381,7 +381,7 @@
 }
 
 .close-btn:hover {
-  color: #fff;
+  color: var(--text);
 }
 
 .panel-content {
@@ -389,7 +389,7 @@
 }
 
 .main-text {
-  color: #fff;
+  color: var(--text);
   font-size: 0.9rem;
   line-height: 1.4;
   margin-bottom: 1rem;
@@ -405,12 +405,12 @@
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  background: #333;
-  color: #ccc;
+  background: var(--surface);
+  color: var(--muted);
 }
 
 .connections h4 {
-  color: #00ffff;
+  color: var(--accent);
   font-size: 0.8rem;
   margin: 0 0 0.5rem 0;
   text-transform: uppercase;
@@ -419,9 +419,9 @@
 
 .connected-item {
   font-size: 0.8rem;
-  color: #bbb;
+  color: var(--muted);
   padding: 0.5rem;
-  background: #222;
+  background: var(--surface);
   border-radius: 4px;
   margin-bottom: 0.5rem;
   cursor: pointer;
@@ -429,23 +429,23 @@
 }
 
 .connected-item:hover {
-  background: #333;
+  background: var(--surface);
 }
 
 .minimap {
   position: absolute;
   bottom: 20px;
   right: 20px;
-  border: 1px solid #333;
-  background: #000;
+  border: 1px solid var(--border);
+  background: var(--bg);
   z-index: 5;
   pointer-events: none;
 }
 
 .minimap-toggle {
-  background: #333;
-  color: #00ffff;
-  border: 1px solid #555;
+  background: var(--surface);
+  color: var(--accent);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   cursor: pointer;
@@ -455,5 +455,5 @@
 }
 
 .minimap-toggle:hover {
-  background: #444;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }

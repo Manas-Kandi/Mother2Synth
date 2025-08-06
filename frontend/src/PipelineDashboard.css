@@ -2,8 +2,8 @@
   max-width: 720px;
   margin: 2rem auto;
   font-family: "Inter", system-ui, sans-serif;
-  background: #111;
-  color: #e5e5e5;
+  background: var(--surface);
+  color: var(--text);
   padding: 2rem;
   border-radius: 12px;
 }
@@ -14,12 +14,12 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #9ca3af;
+  color: var(--muted);
 }
 
 .card {
-  background: #18181b;
-  border: 1px solid #27272a;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 0.75rem;
   overflow: hidden;
@@ -35,7 +35,7 @@
 }
 
 .card header:hover {
-  background: #27272a;
+  background: var(--surface);
 }
 
 .icon {
@@ -45,10 +45,10 @@
   flex-shrink: 0;
 }
 
-.icon.done   { color: #22c55e; }
-.icon.running{ color: #f59e0b; animation: spin 1.5s linear infinite; }
-.icon.error  { color: #ef4444; }
-.icon.idle   { color: #52525b; }
+.icon.done   { color: var(--accent); }
+.icon.running{ color: var(--accent); animation: spin 1.5s linear infinite; }
+.icon.error  { color: var(--error); }
+.icon.idle   { color: var(--muted); }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
@@ -58,7 +58,7 @@
 .chevron {
   margin-left: auto;
   font-size: 0.7rem;
-  color: #71717a;
+  color: var(--muted);
 }
 
 pre {
@@ -66,7 +66,7 @@ pre {
   padding: 1rem;
   font-size: 0.75rem;
   line-height: 1.4;
-  background: #0a0a0a;
+  background: var(--bg);
   max-height: 320px;
   overflow: auto;
 }

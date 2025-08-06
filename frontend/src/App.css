@@ -38,14 +38,14 @@
 }
 
 .read-the-docs {
-  color: #888;
+  color: var(--muted);
 }
 
 .drop-zone {
   height: 300px;
   width: 100%;
   max-width: 600px;
-  border: 2px dashed #999;
+  border: 2px dashed var(--border);
   border-radius: 8px;
   margin: 100px auto;
   display: flex;
@@ -53,5 +53,5 @@
   justify-content: center;
   align-items: center;
   font-family: sans-serif;
-  color: #fff;
+  color: var(--text);
 }

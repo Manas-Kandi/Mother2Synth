@@ -2,7 +2,7 @@
   padding: 1rem;
   height: 100%;
   overflow: auto;
-  color: #fff;
+  color: var(--text);
 }
 
 .board-header {
@@ -13,7 +13,7 @@
 }
 
 .board-link {
-  color: #00ffff;
+  color: var(--accent);
   text-decoration: none;
   font-size: 0.9rem;
 }
@@ -23,8 +23,8 @@
 }
 
 .board-content {
-  background: #111;
-  border: 1px solid #333;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1rem;
   overflow: auto;
@@ -33,14 +33,14 @@
 .board-json {
   white-space: pre-wrap;
   font-family: monospace;
-  color: #00ffff;
+  color: var(--accent);
   font-size: 0.85rem;
 }
 
 .empty-state {
   text-align: center;
   margin-top: 2rem;
-  color: #666;
+  color: var(--muted);
 }
 
 .empty-icon {
