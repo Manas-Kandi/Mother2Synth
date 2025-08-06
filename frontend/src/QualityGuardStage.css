@@ -11,32 +11,32 @@
 }
 
 .stage-header h1 {
-  color: #2c3e50;
+  color: var(--text);
   margin-bottom: 10px;
 }
 
 .stage-description {
-  color: #7f8c8d;
+  color: var(--muted);
   font-size: 16px;
 }
 
 .loading {
   text-align: center;
   padding: 40px;
-  color: #7f8c8d;
+  color: var(--muted);
 }
 
 .error {
-  background: #fee;
-  border: 1px solid #fcc;
+  background: color-mix(in srgb, var(--error) 15%, var(--surface));
+  border: 1px solid var(--error);
   border-radius: 8px;
   padding: 20px;
   margin: 20px 0;
-  color: #c33;
+  color: var(--error);
 }
 
 .validation-report {
-  background: white;
+  background: var(--surface);
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -44,8 +44,8 @@
 
 .tabs {
   display: flex;
-  background: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
 }
 
 .tab {
@@ -54,14 +54,14 @@
   border: none;
   background: none;
   font-size: 14px;
-  color: #6c757d;
+  color: var(--muted);
   transition: all 0.3s ease;
 }
 
 .tab.active {
-  color: #007bff;
-  border-bottom: 2px solid #007bff;
-  background: white;
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  background: var(--surface);
 }
 
 .tab-content {
@@ -75,7 +75,7 @@
 .score-display {
   text-align: center;
   padding: 20px;
-  background: #f8f9fa;
+  background: var(--surface);
   border-radius: 8px;
   margin-bottom: 20px;
 }
@@ -83,12 +83,12 @@
 .score-number {
   font-size: 48px;
   font-weight: bold;
-  color: #28a745;
+  color: var(--accent);
 }
 
 .score-label {
   font-size: 14px;
-  color: #6c757d;
+  color: var(--muted);
   margin-top: 5px;
 }
 
@@ -99,24 +99,24 @@
 .issue-item {
   padding: 15px;
   margin: 10px 0;
-  border-left: 4px solid #ddd;
-  background: #f8f9fa;
+  border-left: 4px solid var(--border);
+  background: var(--surface);
   border-radius: 4px;
 }
 
 .issue-item.critical {
-  border-left-color: #dc3545;
-  background: #f8d7da;
+  border-left-color: var(--error);
+  background: color-mix(in srgb, var(--error) 15%, var(--surface));
 }
 
 .issue-item.warning {
-  border-left-color: #ffc107;
-  background: #fff3cd;
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
 }
 
 .issue-item.info {
-  border-left-color: #17a2b8;
-  background: #d1ecf1;
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
 }
 
 .issue-title {
@@ -126,12 +126,12 @@
 
 .issue-description {
   font-size: 14px;
-  color: #6c757d;
+  color: var(--muted);
 }
 
 .issue-recommendation {
   font-size: 13px;
-  color: #495057;
+  color: var(--muted);
   margin-top: 8px;
   font-style: italic;
 }
@@ -143,7 +143,7 @@
 .evidence-item {
   padding: 10px;
   margin: 5px 0;
-  background: #f8f9fa;
+  background: var(--surface);
   border-radius: 4px;
   font-size: 14px;
 }
@@ -156,7 +156,7 @@
 }
 
 .metric-card {
-  background: #f8f9fa;
+  background: var(--surface);
   padding: 20px;
   border-radius: 8px;
   text-align: center;
@@ -165,12 +165,12 @@
 .metric-value {
   font-size: 24px;
   font-weight: bold;
-  color: #007bff;
+  color: var(--accent);
 }
 
 .metric-label {
   font-size: 14px;
-  color: #6c757d;
+  color: var(--muted);
   margin-top: 5px;
 }
 
@@ -181,23 +181,23 @@
 .recommendation-item {
   padding: 15px;
   margin: 10px 0;
-  background: #e8f5e8;
-  border-left: 4px solid #28a745;
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
+  border-left: 4px solid var(--accent);
   border-radius: 4px;
 }
 
 .recommendation-title {
   font-weight: bold;
-  color: #155724;
+  color: var(--accent);
 }
 
 .recommendation-description {
   margin-top: 5px;
-  color: #155724;
+  color: var(--text);
 }
 
 .summary-section {
-  background: #f8f9fa;
+  background: var(--surface);
   padding: 20px;
   border-radius: 8px;
   margin: 20px 0;
@@ -207,7 +207,7 @@
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--border);
 }
 
 .summary-item:last-child {
@@ -219,21 +219,21 @@
 }
 
 .summary-value {
-  color: #007bff;
+  color: var(--accent);
 }
 
 .empty-state {
   text-align: center;
   padding: 40px;
-  color: #6c757d;
+  color: var(--muted);
 }
 
 .loading-spinner {
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #007bff;
+  border: 3px solid var(--border);
+  border-top: 3px solid var(--accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

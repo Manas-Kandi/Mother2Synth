@@ -329,8 +329,8 @@
 }
 
 .delete-comment:hover {
-  background: rgba(255, 0, 0, 0.1);
-  color: #ff6b6b;
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+  color: var(--error);
 }
 
 /* Empty State */

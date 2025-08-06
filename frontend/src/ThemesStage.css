@@ -37,10 +37,10 @@
 
 .atom-card {
   font-size: 0.95rem;
-  background: #181818;
+  background: var(--surface);
   border-radius: 6px;
   padding: 0.75rem;
-  color: #ddd;
+  color: var(--text);
   line-height: 1.5;
 }
 

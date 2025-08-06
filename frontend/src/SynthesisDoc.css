@@ -7,8 +7,8 @@
   font-size: 17px;
   line-height: 1.68;
   letter-spacing: -0.01em;
-  color: #e1e1e1;
-  background: #0d0d0d;
+  color: var(--text);
+  background: var(--bg);
 }
 
 /* section dividers via white-space only */
@@ -19,7 +19,7 @@
 /* transcript speaker labels */
 .transcript p strong {
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .transcript p + p {
@@ -39,7 +39,7 @@
 .annotated-unit aside {
   font-size: 0.78em;
   line-height: 1.4;
-  color: #7c7c7c;
+  color: var(--muted);
   margin-top: 0.45rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
