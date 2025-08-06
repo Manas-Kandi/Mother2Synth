@@ -14,9 +14,15 @@ ensure_dirs()
 
 app = FastAPI()
 
+# Configure CORS to allow requests from the frontend development server
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",  # Add the port your frontend is running on
+        "http://127.0.0.1:5174",  # Also allow 127.0.0.1 for consistency
+    ],
+    allow_origin_regex=r"http://localhost:517\d$",  # Allow any port starting with 517
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],

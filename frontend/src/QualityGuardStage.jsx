@@ -26,10 +26,9 @@ export default function QualityGuardStage({ file }) {
     setError(null);
 
     try {
-      const response = await fetchWithProject(
-        `/quality-guard?filename=${encodeURIComponent(file.name)}&project_slug=${encodeURIComponent(projectSlug)}`,
-        { method: "POST" },
-        projectSlug
+      const response = await fetch(
+        `http://localhost:8000/quality-guard?filename=${encodeURIComponent(file.name)}&project_slug=${encodeURIComponent(projectSlug)}`,
+        { method: "POST" }
       );
 
       if (!response.ok) {

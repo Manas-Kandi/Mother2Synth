@@ -55,89 +55,179 @@ export default function ComprehensiveShell() {
   }, [updateContext]);
 
   async function handleFiles(selectedFiles, slug) {
-    if (!selectedFiles.length) return;
+    console.log('handleFiles called with:', { selectedFiles, slug });
+    
+    if (!selectedFiles || !selectedFiles.length) {
+      console.error('No files selected');
+      setStatusMessage("No files selected.");
+      return;
+    }
 
     if (!slug) {
+      console.error('No project slug provided');
       setStatusMessage("Project slug is required.");
       return;
     }
 
+    // Set project slug immediately for UI feedback
+    setProjectSlug(slug);
+    setStatusMessage(`Preparing to process ${selectedFiles.length} file(s)...`);
+
+    // Validate project (but don't block if it fails)
     try {
       const res = await fetchWithProject("/projects", {}, slug);
-      const projects = await res.json();
-      if (!projects[slug]) {
-        setStatusMessage("Project slug not found.");
-        return;
+      if (res.ok) {
+        const projects = await res.json();
+        if (!projects[slug]) {
+          console.log(`Project '${slug}' not found, will attempt to create during upload`);
+          setStatusMessage(`Creating new project '${slug}'...`);
+        }
       }
     } catch (err) {
-      console.error("Error validating slug", err);
-      setStatusMessage("Error validating project slug.");
-      return;
+      console.warn("Project validation warning:", err);
+      // Continue with upload even if validation fails
     }
 
-    setProjectSlug(slug);
-    setStatusMessage("Processing files...");
-
     const updated = [];
+    let encounteredError = false;
 
     for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      const filename = file.name;
+      
       try {
-        const file = selectedFiles[i];
-        const filename = file.name;
-
-        // Step 1: Upload and normalize
-        setStatusMessage(`Cleaning: ${filename} (${i+1}/${selectedFiles.length})`);
+        // Step 1: Upload file
+        setStatusMessage(`Uploading: ${filename} (${i+1}/${selectedFiles.length})`);
+        console.log(`Processing file ${i+1}/${selectedFiles.length}:`, filename);
+        
+        // Create form data
         const form = new FormData();
-        form.append("files", file);
-          const uploadRes = await fetchWithProject("/upload", {
+        form.append("files", file);  // Use "files" to match backend endpoint parameter
+        
+        console.log('Uploading file to server...');
+        const uploadRes = await fetchWithProject(
+          "/upload", 
+          {
             method: "POST",
             body: form,
-          }, slug);
+            // Let the browser set Content-Type with boundary
+          }, 
+          slug
+        );
+        
         if (!uploadRes.ok) {
-          throw new Error(`Upload failed: ${uploadRes.statusText}`);
+          const errorText = await uploadRes.text().catch(() => 'No error details');
+          console.error('Upload failed:', uploadRes.status, errorText);
+          throw new Error(`Upload failed (${uploadRes.status}): ${errorText}`);
         }
+        
+        console.log('File uploaded successfully, normalizing...');
+        setStatusMessage(`Normalizing: ${filename} (${i+1}/${selectedFiles.length})`);
 
-        const normRes = await fetchWithProject(`/normalize/${encodeURIComponent(filename)}`, {}, slug);
-        if (!normRes.ok) throw new Error(`Normalization failed: ${normRes.statusText}`);
-        const { content: cleaned } = await normRes.json();
+        // Step 2: Normalize
+        console.log('Normalizing file...');
+        const normRes = await fetchWithProject(
+          `/normalize/${encodeURIComponent(filename)}`, 
+          { method: "GET" }, 
+          slug
+        );
+        
+        if (!normRes.ok) {
+          const errorText = await normRes.text().catch(() => 'No error details');
+          throw new Error(`Normalization failed (${normRes.status}): ${errorText}`);
+        }
+        
+        const normData = await normRes.json();
+        const cleaned = normData.content;
+        console.log('File normalized successfully');
 
-        // Step 2: Atomize
-        setStatusMessage(`Atomizing: ${filename} (${i+1}/${selectedFiles.length})`);
-        const atomRes = await fetchWithProject(`/atomise/${encodeURIComponent(filename)}`, {}, slug);
-        if (!atomRes.ok) throw new Error(`Atomization failed: ${atomRes.statusText}`);
+        // Step 3: Atomize
+        setStatusMessage(`Processing: ${filename} (${i+1}/${selectedFiles.length})`);
+        console.log('Atomizing content...');
+        const atomRes = await fetchWithProject(
+          `/atomise/${encodeURIComponent(filename)}`, 
+          { method: "GET" }, 
+          slug
+        );
+        
+        if (!atomRes.ok) {
+          const errorText = await atomRes.text().catch(() => 'No error details');
+          throw new Error(`Atomization failed (${atomRes.status}): ${errorText}`);
+        }
+        
         const { atoms } = await atomRes.json();
+        console.log('Content atomized successfully');
 
-        // Step 3: Annotate
-        setStatusMessage(`Annotating: ${filename} (${i+1}/${selectedFiles.length})`);
-        const annotateRes = await fetchWithProject(`/annotate?filename=${encodeURIComponent(filename)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(atoms),
-        }, slug);
-        if (!annotateRes.ok) throw new Error(`Annotation failed: ${annotateRes.statusText}`);
+        // Step 4: Annotate
+        setStatusMessage(`Analyzing: ${filename} (${i+1}/${selectedFiles.length})`);
+        console.log('Annotating atoms...');
+        const annotateRes = await fetchWithProject(
+          `/annotate?filename=${encodeURIComponent(filename)}`, 
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(atoms),
+          }, 
+          slug
+        );
+        
+        if (!annotateRes.ok) {
+          const errorText = await annotateRes.text().catch(() => 'No error details');
+          throw new Error(`Annotation failed (${annotateRes.status}): ${errorText}`);
+        }
+        
         const annotated = await annotateRes.json();
+        console.log('Atoms annotated successfully');
 
-        // Step 4: Build graph
-        setStatusMessage(`Building graph: ${filename} (${i+1}/${selectedFiles.length})`);
-        const graphRes = await fetchWithProject(`/graph?filename=${encodeURIComponent(filename)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(annotated),
-        }, slug);
-        if (!graphRes.ok) throw new Error(`Graph build failed: ${graphRes.statusText}`);
+        // Step 5: Build graph
+        setStatusMessage(`Building insights: ${filename} (${i+1}/${selectedFiles.length})`);
+        console.log('Building graph...');
+        const graphRes = await fetchWithProject(
+          `/graph?filename=${encodeURIComponent(filename)}`, 
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(annotated),
+          }, 
+          slug
+        );
+        
+        if (!graphRes.ok) {
+          const errorText = await graphRes.text().catch(() => 'No error details');
+          throw new Error(`Graph build failed (${graphRes.status}): ${errorText}`);
+        }
+        
         const graph = await graphRes.json();
+        console.log('Graph built successfully');
 
-        // Step 5: Create board
-        setStatusMessage(`Creating board: ${filename} (${i+1}/${selectedFiles.length})`);
-        const boardRes = await fetchWithProject("/board/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ atoms: annotated, themes: graph.themes, project_slug: slug, filename }),
-        }, slug);
-        if (!boardRes.ok) throw new Error(`Board creation failed: ${boardRes.statusText}`);
+        // Step 6: Create board
+        setStatusMessage(`Finalizing: ${filename} (${i+1}/${selectedFiles.length})`);
+        console.log('Creating board...');
+        const boardRes = await fetchWithProject(
+          "/board/create", 
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              atoms: annotated, 
+              themes: graph.themes, 
+              project_slug: slug, 
+              filename 
+            }),
+          }, 
+          slug
+        );
+        
+        if (!boardRes.ok) {
+          const errorText = await boardRes.text().catch(() => 'No error details');
+          throw new Error(`Board creation failed (${boardRes.status}): ${errorText}`);
+        }
+        
         const board = await boardRes.json();
+        console.log('Board created successfully');
 
-        updated.push({
+        // Add to processed files
+        const fileData = {
           name: filename,
           cleaned,
           atoms,
@@ -145,8 +235,12 @@ export default function ComprehensiveShell() {
           graph,
           board,
           project_slug: slug,
-          status: 'complete'
-        });
+          status: 'complete',
+          processedAt: new Date().toISOString()
+        };
+        
+        updated.push(fileData);
+        console.log('File processing complete:', fileData);
       } catch (error) {
         console.error(`Error processing ${selectedFiles[i]?.name}:`, error);
         encounteredError = true;

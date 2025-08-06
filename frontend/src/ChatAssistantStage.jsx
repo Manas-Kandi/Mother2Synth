@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { fetchWithProject } from "./api";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useGlobalStore } from "./store";
 import "./ChatAssistantStage.css";
 
 export default function ChatAssistantStage({ file }) {
@@ -8,6 +8,7 @@ export default function ChatAssistantStage({ file }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [contextPanel, setContextPanel] = useState(false);
+  const projectSlug = useGlobalStore((state) => state.projectSlug);
   
   const messagesEndRef = useRef(null);
 
