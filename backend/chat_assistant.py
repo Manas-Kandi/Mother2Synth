@@ -1,5 +1,5 @@
 """
-LLM Chat Assistant for Mother-2
+LLM Chat Assistant for slugg.e
 Interactive AI assistant providing guidance throughout the research synthesis process
 """
 
@@ -299,7 +299,7 @@ class ChatAssistant:
     def _clarify_methodology_response(self, message: str) -> Dict[str, Any]:
         """Explain methodology and process"""
         
-        response = """The Mother-2 system uses a systematic approach to identify themes from research transcripts:
+        response = """The slugg.e system uses a systematic approach to identify themes from research transcripts:
 
 1. **Atomization**: Break transcripts into atomic units (quotes, statements)
 2. **Annotation**: Tag atoms with metadata (speaker, context, sentiment)

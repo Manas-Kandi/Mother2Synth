@@ -1,5 +1,5 @@
 """
-Enhanced Normalizer for Mother-2
+Enhanced Normalizer for slugg.e
 Advanced transcript cleaning with speaker labeling and PII detection
 """
 
