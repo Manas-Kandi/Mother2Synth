@@ -1,5 +1,5 @@
 """
-Human Checkpoint System for Mother-2
+Human Checkpoint System for slugg.e
 Interactive QA system for human-in-the-loop validation
 """
 

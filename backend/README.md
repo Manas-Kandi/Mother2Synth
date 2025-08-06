@@ -1,3 +1,3 @@
-# Mother2 Backend
+# slugg.e Backend
 
-Backend service for the Mother2 research synthesis application.
+Backend service for the slugg.e research synthesis application.

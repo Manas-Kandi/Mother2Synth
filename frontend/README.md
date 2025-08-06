@@ -1,6 +1,6 @@
-# React + Vite
+# slugg.e Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend for the slugg.e research synthesis application built with React and Vite.
 
 Currently, two official plugins are available:
 

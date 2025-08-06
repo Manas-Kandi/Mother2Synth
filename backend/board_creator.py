@@ -1,5 +1,5 @@
 """
-Tldraw-based Collaborative Board Creator for Mother-2
+Tldraw-based Collaborative Board Creator for slugg.e
 Real-time collaborative whiteboard with journey mapping and theme visualization
 """
 
