@@ -171,7 +171,13 @@ export default function UploadStage({
         <input
           type="text"
           value={projectSlug}
-          onChange={(e) => setProjectSlug(e.target.value)}
+          onChange={(e) => {
+          const sanitized = e.target.value
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '');
+          setProjectSlug(sanitized);
+        }}
           placeholder="Enter project slug"
           className="slug-input"
           aria-label="Project slug"

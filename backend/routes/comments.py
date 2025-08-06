@@ -4,10 +4,10 @@ import logging
 from datetime import datetime
 from typing import Dict, Optional, List
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from paths import COMMENTS_DIR
+from paths import get_comments_path
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -34,61 +34,51 @@ class CommentResponse(BaseModel):
     message: Optional[str] = None
 
 
-os.makedirs(COMMENTS_DIR, exist_ok=True)
-
-
-def get_comments_file(filename: str) -> str:
-    safe_filename = filename.replace("/", "_").replace("\\", "_")
-    path = os.path.join(COMMENTS_DIR, f"{safe_filename}.json")
-    logger.info("Resolved comments path: %s", os.path.abspath(path))
-    return path
-
-
-def load_comments(filename: str) -> Dict:
-    comments_file = get_comments_file(filename)
+def load_comments(project_slug: str, filename: str) -> Dict:
+    comments_file = get_comments_path(project_slug, filename)
     if os.path.exists(comments_file):
         with open(comments_file, "r") as f:
             return json.load(f)
     return {"comments": {}, "metadata": {"filename": filename, "created": datetime.now().isoformat()}}
 
 
-def save_comments(filename: str, comments_data: Dict) -> None:
-    comments_file = get_comments_file(filename)
+def save_comments(project_slug: str, filename: str, comments_data: Dict) -> None:
+    comments_file = get_comments_path(project_slug, filename)
     comments_data["metadata"]["updated"] = datetime.now().isoformat()
     with open(comments_file, "w") as f:
         json.dump(comments_data, f, indent=2)
 
 
-@router.get("/comments/{filename}")
-async def get_comments(filename: str):
+@router.get("/comments")
+async def get_comments(project_slug: str = Query(...), filename: str = Query(...)):
     try:
-        return load_comments(filename)
+        return load_comments(project_slug, filename)
     except Exception as e:
         logger.error("Failed to load comments for %s: %s", filename, e)
         raise HTTPException(status_code=500, detail=f"Failed to load comments: {str(e)}")
 
 
-@router.post("/comments/{filename}")
-async def add_comment(filename: str, request: CommentRequest) -> CommentResponse:
+@router.post("/comments")
+async def add_comment(request: CommentRequest, project_slug: str = Query(...), filename: str = Query(...)) -> CommentResponse:
     try:
-        comments_data = load_comments(filename)
+        comments_data = load_comments(project_slug, filename)
         exchange_id = str(request.exchangeId)
         if exchange_id not in comments_data["comments"]:
             comments_data["comments"][exchange_id] = []
         comment_dict = request.comment.dict()
         comment_dict["created"] = datetime.now().isoformat()
         comments_data["comments"][exchange_id].append(comment_dict)
-        save_comments(filename, comments_data)
+        save_comments(project_slug, filename, comments_data)
         return CommentResponse(success=True, message="Comment added successfully")
     except Exception as e:
         logger.error("Failed to save comment for %s: %s", filename, e)
         raise HTTPException(status_code=500, detail=f"Failed to save comment: {str(e)}")
 
 
-@router.delete("/comments/{filename}/{comment_id}")
-async def delete_comment(filename: str, comment_id: int) -> CommentResponse:
+@router.delete("/comments/{comment_id}")
+async def delete_comment(comment_id: int, project_slug: str = Query(...), filename: str = Query(...)) -> CommentResponse:
     try:
-        comments_data = load_comments(filename)
+        comments_data = load_comments(project_slug, filename)
         found = False
         for exchange_id, comments_list in comments_data["comments"].items():
             original_length = len(comments_list)
@@ -98,7 +88,7 @@ async def delete_comment(filename: str, comment_id: int) -> CommentResponse:
         if not found:
             raise HTTPException(status_code=404, detail="Comment not found")
         comments_data["comments"] = {k: v for k, v in comments_data["comments"].items() if v}
-        save_comments(filename, comments_data)
+        save_comments(project_slug, filename, comments_data)
         return CommentResponse(success=True, message="Comment deleted successfully")
     except HTTPException:
         raise
@@ -107,10 +97,10 @@ async def delete_comment(filename: str, comment_id: int) -> CommentResponse:
         raise HTTPException(status_code=500, detail=f"Failed to delete comment: {str(e)}")
 
 
-@router.get("/comments/{filename}/export")
-async def export_comments(filename: str):
+@router.get("/comments/export")
+async def export_comments(project_slug: str = Query(...), filename: str = Query(...)):
     try:
-        comments_data = load_comments(filename)
+        comments_data = load_comments(project_slug, filename)
         synthesis_format = {
             "filename": filename,
             "total_comments": sum(len(comments) for comments in comments_data["comments"].values()),
@@ -138,6 +128,6 @@ async def export_comments(filename: str):
         raise HTTPException(status_code=500, detail=f"Failed to export comments: {str(e)}")
 
 
-@router.get("/synthesis/{filename}/comments")
-async def get_synthesis_comments(filename: str):
-    return await export_comments(filename)
+@router.get("/synthesis/comments")
+async def get_synthesis_comments(project_slug: str = Query(...), filename: str = Query(...)):
+    return await export_comments(project_slug, filename)

@@ -126,36 +126,36 @@ export default function ComprehensiveShell() {
 
         // Step 2: Normalize
         console.log('Normalizing file...');
-        const normRes = await fetchWithProject(
-          `/normalize/${encodeURIComponent(filename)}`, 
-          { method: "GET" }, 
+        const normalizeRes = await fetchWithProject(
+          `/normalize?filename=${encodeURIComponent(filename)}`,
+          { method: "POST" },
           slug
         );
         
-        if (!normRes.ok) {
-          const errorText = await normRes.text().catch(() => 'No error details');
-          throw new Error(`Normalization failed (${normRes.status}): ${errorText}`);
+        if (!normalizeRes.ok) {
+          const errorText = await normalizeRes.text().catch(() => 'No error details');
+          throw new Error(`Normalization failed (${normalizeRes.status}): ${errorText}`);
         }
         
-        const normData = await normRes.json();
+        const normData = await normalizeRes.json();
         const cleaned = normData.content;
         console.log('File normalized successfully');
 
         // Step 3: Atomize
-        setStatusMessage(`Processing: ${filename} (${i+1}/${selectedFiles.length})`);
+        setStatusMessage(`Processing: ${filename} (${i + 1}/${selectedFiles.length})`);
         console.log('Atomizing content...');
-        const atomRes = await fetchWithProject(
-          `/atomise/${encodeURIComponent(filename)}`, 
-          { method: "GET" }, 
+        const atomiseRes = await fetchWithProject(
+          `/atomise?filename=${encodeURIComponent(filename)}`,
+          { method: "POST" },
           slug
         );
         
-        if (!atomRes.ok) {
-          const errorText = await atomRes.text().catch(() => 'No error details');
-          throw new Error(`Atomization failed (${atomRes.status}): ${errorText}`);
+        if (!atomiseRes.ok) {
+          const errorText = await atomiseRes.text().catch(() => 'No error details');
+          throw new Error(`Atomization failed (${atomiseRes.status}): ${errorText}`);
         }
         
-        const { atoms } = await atomRes.json();
+        const { atoms } = await atomiseRes.json();
         console.log('Content atomized successfully');
 
         // Step 4: Annotate
@@ -228,6 +228,7 @@ export default function ComprehensiveShell() {
 
         // Add to processed files
         const fileData = {
+          id: `${filename}-${new Date().toISOString()}`,
           name: filename,
           cleaned,
           atoms,
@@ -246,6 +247,7 @@ export default function ComprehensiveShell() {
         encounteredError = true;
         setStatusMessage(`Error processing ${selectedFiles[i]?.name || 'unknown'}: ${error.message}`);
         updated.push({
+          id: `${selectedFiles[i]?.name || 'unknown'}-${new Date().toISOString()}`,
           name: selectedFiles[i]?.name || 'unknown',
           status: 'error',
           error: error.message
@@ -343,7 +345,7 @@ export default function ComprehensiveShell() {
             <h3 className="rail-title">Research Files</h3>
             {files.map((file, index) => (
               <button
-                key={file.name}
+                key={file.id}
                 className={`file-item ${index === activeFileIndex ? "active" : ""}`}
                 onClick={() => handleFileSelect(index)}
                 title={file.name}

@@ -437,17 +437,4 @@ class QualityGuard:
         
         return next_steps
 
-# Usage example
-def run_quality_guard(project_slug: str, themes: List[Dict], atoms: List[Dict], 
-                     insights: List[Dict], board_data: Dict) -> Dict[str, Any]:
-    """Run complete quality validation"""
-    
-    guard = QualityGuard(project_slug)
-    validation_report = guard.run_full_validation(themes, atoms, insights, board_data)
-    
-    # Save validation report
-    report_file = f"{project_slug}_validation_report.json"
-    with open(report_file, 'w') as f:
-        json.dump(validation_report, f, indent=2, default=str)
-    
-    return validation_report
+

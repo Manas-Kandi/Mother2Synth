@@ -5,10 +5,13 @@ Interactive AI assistant providing guidance throughout the research synthesis pr
 
 import json
 import re
+import os
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+
+from paths import get_chat_history_path
 
 @dataclass
 class ChatMessage:
@@ -23,14 +26,43 @@ class ChatAssistant:
     def __init__(self, project_slug: str):
         self.project_slug = project_slug
         self.logger = logging.getLogger(__name__)
-        self.conversation_history = []
+        self.conversation_history: List[ChatMessage] = []
         self.context = {
             'current_stage': 'initial',
             'project_data': {},
             'user_goals': [],
             'pending_questions': []
         }
-    
+        self._load_history()
+
+    def _load_history(self):
+        history_path = get_chat_history_path(self.project_slug)
+        if not os.path.exists(history_path):
+            return
+        try:
+            with open(history_path, 'r', encoding='utf-8') as f:
+                history_data = json.load(f)
+                for msg_data in history_data:
+                    msg_data['timestamp'] = datetime.fromisoformat(msg_data['timestamp'])
+                    self.conversation_history.append(ChatMessage(**msg_data))
+            self.logger.info(f"Loaded {len(self.conversation_history)} messages for {self.project_slug}")
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            self.logger.error(f"Failed to load or parse chat history for {self.project_slug}: {e}")
+
+    def _save_history(self):
+        history_path = get_chat_history_path(self.project_slug)
+        try:
+            os.makedirs(os.path.dirname(history_path), exist_ok=True)
+            history_data = []
+            for msg in self.conversation_history:
+                msg_dict = asdict(msg)
+                msg_dict['timestamp'] = msg.timestamp.isoformat()
+                history_data.append(msg_dict)
+            with open(history_path, 'w', encoding='utf-8') as f:
+                json.dump(history_data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            self.logger.error(f"Failed to save chat history for {self.project_slug}: {e}")
+
     def process_message(self, message: str, current_context: Dict[str, Any]) -> Dict[str, Any]:
         """Process user message and generate contextual response"""
         
@@ -49,14 +81,14 @@ class ChatAssistant:
         intent = self._detect_intent(message)
         response = self._generate_response(message, intent)
         
-        # Add response to history
+        # Add assistant response to history
         self.conversation_history.append(ChatMessage(
             role="assistant",
-            content=response['response'],
-            timestamp=datetime.now(),
-            context=response.get('context')
+            content=json.dumps(response), # Store dict as string
+            timestamp=datetime.now()
         ))
         
+        self._save_history()
         return response
     
     def _detect_intent(self, message: str) -> str:

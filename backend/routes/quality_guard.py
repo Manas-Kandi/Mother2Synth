@@ -1,42 +1,43 @@
-from fastapi import APIRouter, HTTPException
 import json
+import logging
+from typing import List, Dict, Any
 
-from quality_guard import run_quality_guard
+from fastapi import APIRouter, HTTPException, Body
+from pydantic import BaseModel
+
+from quality_guard import QualityGuard
+from paths import get_quality_report_path
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
+class QualityGuardRequest(BaseModel):
+    project_slug: str
+    themes: List[Dict[str, Any]]
+    atoms: List[Dict[str, Any]]
+    insights: List[Dict[str, Any]]
+    board_data: Dict[str, Any]
 
-@router.post("/quality-guard/{filename}")
-async def run_quality_validation(filename: str, project_slug: str = None):
-    """Run comprehensive quality validation for a project file."""
-    from dropzone import dropzone_manager
-    import logging
-    
-    logger = logging.getLogger(__name__)
-
-    if not project_slug:
-        raise HTTPException(status_code=400, detail="project_slug query param required")
-
-    themes_path = dropzone_manager.get_project_path(project_slug, "graphs") / filename.replace(".pdf", "_themes.json")
-    atoms_path = dropzone_manager.get_project_path(project_slug, "atoms") / filename.replace(".pdf", "_atoms.json")
-    insights_path = dropzone_manager.get_project_path(project_slug, "graphs") / filename.replace(".pdf", "_insights.json")
-    board_path = dropzone_manager.get_project_path(project_slug, "boards") / filename.replace(".pdf", "_board.json")
-
+@router.post("/quality-guard")
+async def run_quality_validation(request: QualityGuardRequest = Body(...)):
+    """Run a comprehensive quality validation on the project synthesis."""
     try:
-        logger.info(f"Reading themes file: {themes_path}")
-        with open(themes_path, "r", encoding="utf-8") as f:
-            themes = json.load(f)
-        logger.info(f"Reading atoms file: {atoms_path}")
-        with open(atoms_path, "r", encoding="utf-8") as f:
-            atoms = json.load(f)
-        logger.info(f"Reading insights file: {insights_path}")
-        with open(insights_path, "r", encoding="utf-8") as f:
-            insights = json.load(f)
-        logger.info(f"Reading board file: {board_path}")
-        with open(board_path, "r", encoding="utf-8") as f:
-            board_data = json.load(f)
-    except FileNotFoundError as e:
-        logger.error(f"Required file not found: {e}")
-        raise HTTPException(status_code=404, detail=f"Required file not found: {e}")
+        guard = QualityGuard(request.project_slug)
+        validation_report = guard.run_full_validation(
+            themes=request.themes,
+            atoms=request.atoms,
+            insights=request.insights,
+            board_data=request.board_data
+        )
 
-    return run_quality_guard(project_slug, themes, atoms, insights, board_data)
+        # Save the validation report to the project's quality directory
+        report_path = get_quality_report_path(request.project_slug)
+        with open(report_path, 'w', encoding='utf-8') as f:
+            json.dump(validation_report, f, indent=2, default=str)
+        
+        logger.info(f"Quality report for {request.project_slug} saved to {report_path}")
+        return validation_report
+    except Exception as e:
+        logger.error(f"Quality guard validation failed for {request.project_slug}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to run quality validation: {str(e)}")
+

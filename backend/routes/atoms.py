@@ -1,35 +1,115 @@
 import os
-import json
 import re
+import json
 import time
 import logging
 from uuid import uuid4
 from typing import List
 
-from fastapi import APIRouter, HTTPException
+import fitz
+from fastapi import APIRouter, HTTPException, Query, Body
 
 from llm import gemini_model
-from paths import ATOMS_DIR, CLEANED_DIR, UPLOAD_DIR, ANNOTATED_DIR
-from routes.upload import extract_text_from_pdf, run_llm_normalizer
+from paths import get_cleaned_path, get_upload_path, get_atoms_path, get_annotated_path
+from shared_utils import run_llm_normalizer, extract_text_from_pdf
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-ATOMISER_PROMPT = """You are an “Atomic Evidence Splitter”.\n\nInput: cleaned transcript  \nOutput: JSON list of atoms.\n\nSchema per atom:\n{\n  \"id\": \"<uuid>\",\n  \"speaker\": \"<speaker>\",\n  \"text\": \"<1–3 sentence idea>\",\n  \"context\": \"<±2 sentences for context>\",\n  \"entities\": {\n    \"objects\": [],\n    \"tasks\": [],\n    \"emotions\": []\n  },\n  \"confidence\": \"high|medium|low\"\n}\n\nRules:\n- Cut only at natural idea boundaries.  \n- Never merge speakers.  \n- Entities must appear verbatim in text.  \n- If unsure, mark confidence=low and shorten text.  \n\nReturn ONLY valid JSON. No commentary.\n\nTranscript:\n{transcript}\n"""
+
+# NOTE: This is duplicated from routes/upload.py. Consider refactoring to a shared utils file.
+LLM_PROMPT_NORMALIZER = """You are a senior UX research assistant.
+
+You will be given raw transcript text extracted from a PDF. This text may include:
+- Page numbers, headers/footers, and other formatting artifacts
+- Broken sentences or poor line breaks
+- Missing or inconsistent speaker labels
+- Boilerplate content unrelated to the conversation
+
+Your task is to return a cleaned and structured transcript that is ready for downstream synthesis.
+
+Instructions:
+1. Remove noise such as page numbers, headers/footers, and irrelevant boilerplate.
+2. Repair formatting issues like broken lines or mid-sentence splits.
+3. Preserve speaker turns clearly. If speaker labels are inconsistent or missing:
+   - **Use conversational context to separate distinct speakers.**
+   - **Assign clearly differentiated pseudonyms**, like "Speaker 1", "Speaker 2", etc.
+   - If a real name is obvious (e.g. mentioned multiple times as self-introduction), use it instead.
+4. If a speaker is guessed, annotate with `[inferred]`.
+5. If part of the text is unreadable, mark it as `[unintelligible]`.
+6. **Do not hallucinate content** — your job is to clean and segment, not create new ideas.
+
+Format:
+- Output as plain text
+- Each paragraph should start with a speaker label, like:
+
+ERIC: I grew up in Pittsburgh. I loved fishing with my dad.
+AJENA [inferred]: That sounds peaceful. My family used to hike a lot.
+
+Here is the raw transcript:
+---
+{raw_text}
+---
+"""
+
+
+ATOMISER_PROMPT = """You are a hyper-granular insight atomiser for UX research.
+
+You will be given a transcript chunk. Your task is to extract every atomic, self-contained insight from the user's speech.
+
+Return a JSON list of objects, where each object is one atomic insight:
+
+[
+  {
+    "id": "<unique UUID>",
+    "speaker": "<speaker name>",
+    "text": "<exact user quote, verbatim>",
+    "context": "<optional: what was being discussed>",
+    "entities": {
+      "objects": ["<e.g., 'dashboard', 'login button'>"],
+      "tasks": ["<e.g., 'reset password', 'find contact info'>"],
+      "emotions": ["<e.g., 'frustration', 'confusion', 'relief'>"]
+    },
+    "confidence": "<high|medium|low>"
+  }
+]
+
+Rules:
+1.  **Atomicity is KEY**: Each object must represent a single, indivisible idea, observation, or feeling. If a sentence contains two ideas, split it into two atoms.
+2.  **Verbatim Quotes**: The `text` field MUST be an exact quote from the transcript.
+3.  **Speaker Attribution**: Correctly identify the speaker for each quote.
+4.  **Entity Extraction**: Populate the `entities` object. Be specific. If no entities are present, use empty lists.
+5.  **Confidence Score**: Rate your confidence in the interpretation of the insight.
+6.  **ID Generation**: You MUST generate a unique UUID for the `id` of every atom.
+7.  **JSON ONLY**: Output nothing but a valid, parseable JSON list. Do not include markdown backticks or any other text.
+
+Transcript Chunk:
+---
+{transcript}
+---
+"""
 
 
 def fix_json_syntax(raw_json: str) -> str:
-    """Try to fix common JSON syntax issues."""
-    return re.sub(r',([\s]*[}\]])', r'\1', raw_json)
+    """Attempt to fix common JSON syntax errors from LLM output."""
+    # Add missing closing bracket for the list
+    if raw_json.strip().endswith("}"):
+        raw_json += "]"
+    # Add missing closing brace for the last object
+    if '"' in raw_json and not raw_json.strip().endswith("}") and not raw_json.strip().endswith("]"):
+        raw_json += "}"]"
+    # Remove trailing commas
+    raw_json = re.sub(r',\s*([}\]])', r'\1', raw_json)
+    return raw_json
 
 
-def chunk_and_atomise(clean_text: str, source_file: str, chunk_size: int = 8000) -> List[dict]:
-    """Split long text into manageable chunks and atomise each."""
-    lines = clean_text.split('\n')
+def chunk_and_atomise(full_text: str, source_file: str) -> List[dict]:
+    """Split large text into chunks and atomise each one."""
+    lines = full_text.split('\n')
     chunks = []
     current_chunk = ""
     for line in lines:
-        if len(current_chunk + line) > chunk_size and current_chunk:
+        if len(current_chunk) + len(line) > 14000:
             chunks.append(current_chunk.strip())
             current_chunk = line + '\n'
         else:
@@ -67,12 +147,12 @@ def run_llm_atomiser_single(chunk_text: str, source_file: str, chunk_num: int) -
     return []
 
 
-def run_llm_atomiser(clean_text: str, source_file: str) -> List[dict]:
+def run_llm_atomiser(full_text: str, source_file: str) -> List[dict]:
     """Run the atomiser on text, chunking if necessary."""
-    if len(clean_text) > 15000:
-        print(f"\U0001F4CF Text too long ({len(clean_text)} chars), chunking...")
-        return chunk_and_atomise(clean_text, source_file)
-    prompt = ATOMISER_PROMPT.replace("{transcript}", clean_text)
+    if len(full_text) > 15000:
+        print(f"\U0001F4CF Text too long ({len(full_text)} chars), chunking...")
+        return chunk_and_atomise(full_text, source_file)
+    prompt = ATOMISER_PROMPT.replace("{transcript}", full_text)
     for attempt in range(3):
         try:
             response = gemini_model.generate_content(prompt)
@@ -99,7 +179,7 @@ def run_llm_atomiser(clean_text: str, source_file: str) -> List[dict]:
         except json.JSONDecodeError as e:
             print(f"\u274C JSON parse error (attempt {attempt + 1}): {e}")
             if attempt < 2:
-                prompt = ATOMISER_PROMPT.replace("{transcript}", clean_text[:10000])
+                prompt = ATOMISER_PROMPT.replace("{transcript}", full_text[:10000])
                 continue
         except Exception as e:
             print(f"\u274C Other error (attempt {attempt + 1}): {e}")
@@ -110,7 +190,7 @@ def run_llm_atomiser(clean_text: str, source_file: str) -> List[dict]:
     return [{
         "id": str(uuid4()),
         "speaker": "ERROR",
-        "text": f"[Atomiser failed after 3 attempts. Text length: {len(clean_text)} chars. Last error: JSON parsing failed]",
+        "text": f"[Atomiser failed after 3 attempts. Text length: {len(full_text)} chars. Last error: JSON parsing failed]",
         "context": "",
         "entities": {"objects": [], "tasks": [], "emotions": []},
         "confidence": "low",
@@ -118,7 +198,40 @@ def run_llm_atomiser(clean_text: str, source_file: str) -> List[dict]:
     }]
 
 
-ANNOTATOR_PROMPT = """You are a UX-insight extractor.\n\nReturn JSON:\n\n{\n  \"insights\": [\n    {\"type\": \"<meta-category>\", \"label\": \"<\u22643 words>\", \"weight\": 0.0-1.0}\n  ],\n  \"tags\": [\"keyword1\", \"keyword2\"]\n}\n\nAllowed types & examples\npersona: mobile user | admin | new hire  \npain: login friction | hidden cost | broken flow  \nemotion: annoyance | anxiety | delight  \nroot_cause: validation bug | slow backend  \nimpact: task abandon | time lost  \ncontext: on-the-go | multitasking  \ndevice: Android | iPhone | desktop  \nchannel: web | app | phone call  \nfrequency: daily | weekly | first-time  \nseverity: blocker | minor | workaround exists\n\nRules\n- Emit 0-2 insights per type, \u22648 total  \n- weight = confidence 0-1  \n- labels verbatim when possible  \n- skip any you can’t ground\n\nQuote:\n{atom_text}\n"""
+ANNOTATOR_PROMPT = """You are a UX-insight extractor.
+
+You will be given a single atomic insight from a user's speech.
+
+Return a JSON object with the following structure:
+
+{
+  "insights": [
+    {"type": "<meta-category>", "label": "<3 words>", "weight": 0.0-1.0}
+  ],
+  "tags": ["keyword1", "keyword2"]
+}
+
+Allowed types & examples
+persona: mobile user | admin | new hire
+pain: login friction | hidden cost | broken flow
+emotion: annoyance | anxiety | delight
+root_cause: validation bug | slow backend
+impact: task abandon | time lost
+context: on-the-go | multitasking
+device: Android | iPhone | desktop
+channel: web | app | phone call
+frequency: daily | weekly | first-time
+severity: blocker | minor | workaround exists
+
+Rules
+- Emit 0-2 insights per type, ≤8 total
+- weight = confidence 0-1
+- labels verbatim when possible
+- skip any you can’t ground
+
+Quote:
+{atom_text}
+"""
 
 
 def annotate_atom(text: str) -> dict:
@@ -138,31 +251,33 @@ def annotate_atom(text: str) -> dict:
         return {"insights": [], "tags": []}
 
 
-@router.get("/atomise/{filename}")
-async def atomise_file(filename: str, project_slug: str = None):
-    from dropzone import dropzone_manager
+@router.post("/atomise")
+async def atomise_file(project_slug: str = Query(...), filename: str = Query(...)):
     if not filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Must be a PDF file")
-    if not project_slug:
-        raise HTTPException(status_code=400, detail="project_slug query param required")
-    atoms_path = dropzone_manager.get_project_path(project_slug, "atoms") / filename.replace(".pdf", ".json")
-    cleaned_path = dropzone_manager.get_project_path(project_slug, "cleaned") / filename.replace(".pdf", ".txt")
-    raw_path = dropzone_manager.get_project_path(project_slug, "raw") / filename
-    logger.info("Atomise paths: atoms=%s cleaned=%s raw=%s", atoms_path, cleaned_path, raw_path)
+
+    atoms_path = get_atoms_path(project_slug, filename)
+    cleaned_path = get_cleaned_path(project_slug, filename)
+    upload_path = get_upload_path(project_slug, filename)
+    
+    logger.info("Atomise paths: atoms=%s cleaned=%s upload=%s", atoms_path, cleaned_path, upload_path)
+
     try:
-        if atoms_path.exists():
+        if os.path.exists(atoms_path):
             with open(atoms_path, "r", encoding="utf-8") as f:
                 return {"atoms": json.load(f)}
-        if cleaned_path.exists():
+
+        if os.path.exists(cleaned_path):
             with open(cleaned_path, "r", encoding="utf-8") as f:
                 clean_text = f.read()
-        elif raw_path.exists():
-            full_text = extract_text_from_pdf(str(raw_path))
+        elif os.path.exists(upload_path):
+            full_text = extract_text_from_pdf(upload_path)
             clean_text = run_llm_normalizer(full_text)
             with open(cleaned_path, "w", encoding="utf-8") as f:
                 f.write(clean_text)
         else:
-            raise HTTPException(status_code=404, detail=f"Raw PDF not found in DropZone: {raw_path}")
+            raise HTTPException(status_code=404, detail=f"Source file not found for project '{project_slug}': {filename}")
+
         atoms = run_llm_atomiser(clean_text, filename)
         with open(atoms_path, "w", encoding="utf-8") as f:
             json.dump(atoms, f, indent=2, ensure_ascii=False)
@@ -173,15 +288,13 @@ async def atomise_file(filename: str, project_slug: str = None):
 
 
 @router.post("/annotate")
-async def annotate_atoms(atoms: List[dict], filename: str, project_slug: str = None):
-    """Annotate atoms and cache the results in DropZone."""
-    from dropzone import dropzone_manager
-    if not project_slug:
-        raise HTTPException(status_code=400, detail="project_slug query param required")
-    annotated_path = dropzone_manager.get_project_path(project_slug, "annotated") / filename.replace(".pdf", ".json")
+async def annotate_atoms(project_slug: str = Query(...), filename: str = Query(...), atoms: List[dict] = Body(...)):
+    """Annotate atoms and cache the results."""
+    annotated_path = get_annotated_path(project_slug, filename)
     logger.info("Annotate path: %s", annotated_path)
+
     try:
-        if annotated_path.exists():
+        if os.path.exists(annotated_path):
             with open(annotated_path, "r", encoding="utf-8") as f:
                 enriched = json.load(f)
         else:

@@ -3,15 +3,15 @@ import json
 import logging
 from typing import List
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body, Query
 
 from llm import gemini_model
-from paths import GRAPH_DIR
+from paths import get_graph_path
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-GRAPH_BUILDER_PROMPT = """You are an insight-web v2 architect.\n\nInput: list of annotated atoms (with insights array).\n\nGoals\n1. Exact edges: keep \"shared label\" edges (weight = min weight ≥ 0.7).\n2. Inference edges: create \"inferred_<type>\" edge when two atoms have semantically related insights (e.g., \"login friction\" ≈ \"wrong password\"); weight = average of the two insight weights, threshold ≥ 0.75.\n3. Auto-themes: group atoms into named themes (≤ 3 words) if ≥ 3 atoms share dominant insight patterns.\n4. Auto-journey: create lightweight \"as-is\" journey by ordering atoms chronologically and tagging each step with dominant pain + emotion.\n\nOutput JSON:\n{\n  \"nodes\": [...],\n  \"edges\": [...],\n  \"clusters\": {...},\n  \"themes\": [\n    {\"name\": \"login friction\", \"atoms\": [...], \"dominant_insights\": {\"pain\": \"login friction\", \"emotion\": \"frustration\"}, \"pain_score\": 0.95}\n  ],\n  \"journey\": [\n    {\"step\": \"login attempt\", \"pain\": \"wrong password\", \"emotion\": \"frustration\", \"atoms\": [...]}\n  ],\n  \"facets\": [...]\n}\n\nRules\n- Exact edge: same label, both weights ≥ 0.7.  \n- Inference edge: semantic similarity ≥ 0.75.  \n- Theme: ≥ 3 atoms.  \n- Journey: keep chronological order.  \n\nReturn strict JSON only."""
+GRAPH_BUILDER_PROMPT = """You are an insight-web v2 architect.\n\nInput: list of annotated atoms (with insights array).\n\nGoals\n1. Exact edges: keep \"shared label\" edges (weight = min weight ≥ 0.7).\n2. Inference edges: create \"inferred_<type>\" edge when two atoms have semantically related insights (e.g., \"login friction\" ≈ \"wrong password\"); weight = average of the two insight weights, threshold ≥ 0.75.\n3. Auto-themes: group atoms into named themes (≤ 3 words) if ≥ 3 atoms share dominant insight patterns.\n4. Auto-journey: create lightweight \"as-is\" journey by ordering atoms chronologically and tagging each step with dominant pain + emotion.\n\nOutput JSON:\n{\n  \"nodes\": [...],\n  \"edges\": [...],\n  \"clusters\": {...},\n  \"themes\": [\n    {\"name\": \"login friction\", \"atoms\": [...], \"dominant_insights\": {\"pain\": \"login friction\", \"emotion\": \"frustration\"}, \"pain_score\": 0.95}\n  ],\n  \"journey\": [\n    {\"step\": \"login attempt\", \"pain\": \"wrong password\", \"emotion\": \"frustration\", \"atoms\": [...]}\n  ],\n  \"facets\": [...],\n  \"summary\": \"...\"\n}\n\nRules\n- Exact edge: same label, both weights ≥ 0.7.  \n- Inference edge: semantic similarity ≥ 0.75.  \n- Theme: ≥ 3 atoms.  \n- Journey: keep chronological order.  \n\nReturn strict JSON only."""
 
 
 def find_shared_insights(node1: dict, node2: dict) -> List[tuple]:
@@ -22,14 +22,11 @@ def find_shared_insights(node1: dict, node2: dict) -> List[tuple]:
 
 
 @router.post("/graph")
-async def build_graph(atoms: List[dict], filename: str, project_slug: str = None):
-    from dropzone import dropzone_manager
-    if not project_slug:
-        raise HTTPException(status_code=400, detail="project_slug query param required")
-    graph_path = dropzone_manager.get_project_path(project_slug, "graphs") / filename.replace(".pdf", ".json")
+async def build_graph(project_slug: str = Query(...), filename: str = Query(...), atoms: List[dict] = Body(...)):
+    graph_path = get_graph_path(project_slug, filename)
     logger.info("Graph path: %s", graph_path)
     try:
-        if graph_path.exists():
+        if os.path.exists(graph_path):
             with open(graph_path, "r", encoding="utf-8") as f:
                 return json.load(f)
 
