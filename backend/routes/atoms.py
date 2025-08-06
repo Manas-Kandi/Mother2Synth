@@ -6,7 +6,6 @@ import logging
 from uuid import uuid4
 from typing import List
 
-import fitz
 from fastapi import APIRouter, HTTPException, Query, Body
 
 from llm import gemini_model
@@ -15,42 +14,6 @@ from shared_utils import run_llm_normalizer, extract_text_from_pdf
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-# NOTE: This is duplicated from routes/upload.py. Consider refactoring to a shared utils file.
-LLM_PROMPT_NORMALIZER = """You are a senior UX research assistant.
-
-You will be given raw transcript text extracted from a PDF. This text may include:
-- Page numbers, headers/footers, and other formatting artifacts
-- Broken sentences or poor line breaks
-- Missing or inconsistent speaker labels
-- Boilerplate content unrelated to the conversation
-
-Your task is to return a cleaned and structured transcript that is ready for downstream synthesis.
-
-Instructions:
-1. Remove noise such as page numbers, headers/footers, and irrelevant boilerplate.
-2. Repair formatting issues like broken lines or mid-sentence splits.
-3. Preserve speaker turns clearly. If speaker labels are inconsistent or missing:
-   - **Use conversational context to separate distinct speakers.**
-   - **Assign clearly differentiated pseudonyms**, like "Speaker 1", "Speaker 2", etc.
-   - If a real name is obvious (e.g. mentioned multiple times as self-introduction), use it instead.
-4. If a speaker is guessed, annotate with `[inferred]`.
-5. If part of the text is unreadable, mark it as `[unintelligible]`.
-6. **Do not hallucinate content** — your job is to clean and segment, not create new ideas.
-
-Format:
-- Output as plain text
-- Each paragraph should start with a speaker label, like:
-
-ERIC: I grew up in Pittsburgh. I loved fishing with my dad.
-AJENA [inferred]: That sounds peaceful. My family used to hike a lot.
-
-Here is the raw transcript:
----
-{raw_text}
----
-"""
 
 
 ATOMISER_PROMPT = """You are a hyper-granular insight atomiser for UX research.
