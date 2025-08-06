@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { fetchWithProject } from "./api";
+import { useGlobalStore } from "./store";
 import ForceGraph2D from "react-force-graph-2d";
 import "./GraphStage.css";
 
 export default function GraphStage({ file }) {
   const graphRef = useRef();
   const [selectedNode, setSelectedNode] = useState(null);
+  const projectSlug = useGlobalStore((state) => state.projectSlug);
   
   // Validate and format graph data
   const formatGraphData = (rawGraph) => {
@@ -82,19 +84,23 @@ export default function GraphStage({ file }) {
       console.log("Enhancing graph with LLM...", rawGraph.nodes.length, "nodes");
       
       // Send nodes to backend for LLM analysis
-      const response = await fetch(`http://localhost:8000/enhance-graph?project_slug=${encodeURIComponent(projectSlug)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nodes: rawGraph.nodes.map(node => ({
-            id: node.id,
-            text: node.text,
-            speaker: node.speaker,
-            insights: node.insights || [],
-            tags: node.tags || []
-          }))
-        })
-      });
+      const response = await fetchWithProject(
+        '/enhance-graph',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nodes: rawGraph.nodes.map(node => ({
+              id: node.id,
+              text: node.text,
+              speaker: node.speaker,
+              insights: node.insights || [],
+              tags: node.tags || []
+            }))
+          })
+        },
+        projectSlug
+      );
       
       if (!response.ok) {
         console.warn('LLM enhancement failed, using original data');
