@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useGlobalStore } from "./store";
+import { fetchWithProject } from "./api";
 import "./ChatAssistantStage.css";
 
 export default function ChatAssistantStage({ file }) {
@@ -28,8 +29,10 @@ export default function ChatAssistantStage({ file }) {
     if (!projectSlug) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/chat/history?project_slug=${encodeURIComponent(projectSlug)}`
+      const response = await fetchWithProject(
+        "/chat/history",
+        {},
+        projectSlug
       );
 
       if (response.ok) {
