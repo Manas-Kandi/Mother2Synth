@@ -6,6 +6,12 @@ import { useGlobalStore } from "./store";
 import ForceGraph2D from "react-force-graph-2d";
 import "./GraphStage.css";
 
+// Debug logging helper. Set DEBUG to true to enable logs.
+const DEBUG = import.meta.env.DEV;
+const debugLog = (...args) => {
+  if (DEBUG) console.log(...args);
+};
+
 export default function GraphStage({ file }) {
   const graphRef = useRef();
   const [selectedNode, setSelectedNode] = useState(null);
@@ -20,7 +26,7 @@ export default function GraphStage({ file }) {
     const edges = Array.isArray(rawGraph.edges) ? rawGraph.edges : 
                   Array.isArray(rawGraph.links) ? rawGraph.links : [];
     
-    console.log("Raw edges:", edges.slice(0, 3)); // Show first 3 edges
+    debugLog("Raw edges:", edges.slice(0, 3)); // Show first 3 edges
     
     // Validate that nodes have required properties
     const validNodes = nodes.filter(node => 
@@ -29,7 +35,7 @@ export default function GraphStage({ file }) {
     
     // Create set of node IDs for validation
     const nodeIds = new Set(validNodes.map(n => n.id));
-    console.log("Valid node IDs:", Array.from(nodeIds).slice(0, 5)); // Show first 5 node IDs
+    debugLog("Valid node IDs:", Array.from(nodeIds).slice(0, 5)); // Show first 5 node IDs
     
     // Validate that links reference existing nodes
     const validLinks = edges.filter(link => {
@@ -52,14 +58,14 @@ export default function GraphStage({ file }) {
       const hasSource = nodeIds.has(sourceId);
       const hasTarget = nodeIds.has(targetId);
       
-      if (!hasValidStructure) console.log("Invalid link structure:", link);
-      if (!hasSource) console.log("Invalid source ID:", sourceId, "not in nodeIds");
-      if (!hasTarget) console.log("Invalid target ID:", targetId, "not in nodeIds");
+      if (!hasValidStructure) debugLog("Invalid link structure:", link);
+      if (!hasSource) debugLog("Invalid source ID:", sourceId, "not in nodeIds");
+      if (!hasTarget) debugLog("Invalid target ID:", targetId, "not in nodeIds");
       
       return hasValidStructure && hasSource && hasTarget;
     });
     
-    console.log("Valid links after filtering:", validLinks.length);
+    debugLog("Valid links after filtering:", validLinks.length);
     
     return {
       nodes: validNodes,
@@ -81,7 +87,7 @@ export default function GraphStage({ file }) {
     if (!rawGraph || !rawGraph.nodes || !projectSlug) return null;
     
     try {
-      console.log("Enhancing graph with LLM...", rawGraph.nodes.length, "nodes");
+      debugLog("Enhancing graph with LLM...", rawGraph.nodes.length, "nodes");
       
       // Send nodes to backend for LLM analysis
       const response = await fetchWithProject(
@@ -108,13 +114,13 @@ export default function GraphStage({ file }) {
       }
       
       const enhanced = await response.json();
-      console.log("LLM enhancement received:", enhanced);
-      console.log("Sample enhanced node:", enhanced[0]);
+      debugLog("LLM enhancement received:", enhanced);
+      debugLog("Sample enhanced node:", enhanced[0]);
       
       // Merge enhanced styling back into original graph
       const enhancedNodes = rawGraph.nodes.map(node => {
         const styling = enhanced.find(s => s.id === node.id);
-        console.log(`Styling for node ${node.id}:`, styling);
+        debugLog(`Styling for node ${node.id}:`, styling);
         return {
           ...node,
           nodeColor: styling?.color || '#666666',
@@ -124,7 +130,7 @@ export default function GraphStage({ file }) {
         };
       });
       
-      console.log("Sample enhanced node after merging:", enhancedNodes[0]);
+      debugLog("Sample enhanced node after merging:", enhancedNodes[0]);
       
       return {
         ...rawGraph,
@@ -148,14 +154,14 @@ export default function GraphStage({ file }) {
       setIsEnhancing(true);
       
       const formatted = formatGraphData(file.graph);
-      console.log("Formatted graph:", formatted);
+      debugLog("Formatted graph:", formatted);
       
       if (formatted && formatted.nodes && formatted.nodes.length > 0) {
         const enhanced = await enhanceGraphWithLLM(formatted);
-        console.log("Enhanced graph:", enhanced);
+        debugLog("Enhanced graph:", enhanced);
         setStyledGraph(enhanced);
       } else {
-        console.log("No valid formatted graph");
+        debugLog("No valid formatted graph");
         setStyledGraph(null);
       }
       
@@ -197,10 +203,10 @@ export default function GraphStage({ file }) {
     return { nodes: matches, links };
   }, [localGraph, speakerFilter, categoryFilter, searchQuery]);
   
-  console.log("GraphStage - raw graph:", file?.graph);
-  console.log("GraphStage - formatted graph:", localGraph);
-  console.log("GraphStage - nodeIds:", localGraph?.nodes?.map(n => n.id));
-  console.log("GraphStage - edge sources/targets:", localGraph?.links?.map(l => ({source: l.source, target: l.target})));
+  debugLog("GraphStage - raw graph:", file?.graph);
+  debugLog("GraphStage - formatted graph:", localGraph);
+  debugLog("GraphStage - nodeIds:", localGraph?.nodes?.map(n => n.id));
+  debugLog("GraphStage - edge sources/targets:", localGraph?.links?.map(l => ({source: l.source, target: l.target})));
 
   useEffect(() => {
     if (graphRef.current && filteredGraph?.nodes?.length > 0) {
