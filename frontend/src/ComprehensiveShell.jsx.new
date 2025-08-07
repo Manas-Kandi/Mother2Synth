@@ -1,0 +1,304 @@
+import { useState, useEffect, useCallback } from "react";
+import { useGlobalStore } from "./store";
+import { fetchWithProject } from "./api";
+import "./ComprehensiveShell.css";
+
+// Import all stage components
+import UploadStage from "./UploadStage";
+import TranscriptStage from "./TranscriptStage";
+import AtomsStage from "./AtomsStage";
+import AnnotatedAtomsStage from "./AnnotatedAtomsStage";
+import GraphStage from "./GraphStage";
+import QualityGuardStage from "./QualityGuardStage";
+import ChatAssistantStage from "./ChatAssistantStage";
+import BoardStage from "./BoardStage";
+import HumanCheckpointsStage from "./HumanCheckpointsStage";
+
+// Navigation stages
+const STAGES = {
+  UPLOAD: -1,
+  TRANSCRIPT: 0,
+  ATOMS: 1,
+  ANNOTATIONS: 2,
+  GRAPH: 3,
+  HUMAN_CHECKPOINTS: 4,
+  BOARD: 5,
+  QUALITY_GUARD: 6,
+  CHAT_ASSISTANT: 7
+};
+
+// Helper function to get stage status
+const getStageStatus = (stageKey, activeFile) => {
+  if (!activeFile) return 'pending';
+  
+  switch (stageKey) {
+    case STAGES.UPLOAD:
+      return 'completed';
+    case STAGES.TRANSCRIPT:
+      return activeFile.transcript ? 'completed' : 'pending';
+    case STAGES.ATOMS:
+      return activeFile.atoms ? 'completed' : 'pending';
+    case STAGES.ANNOTATIONS:
+      return activeFile.annotations ? 'completed' : 'pending';
+    case STAGES.GRAPH:
+      return activeFile.graph ? 'completed' : 'pending';
+    case STAGES.HUMAN_CHECKPOINTS:
+      return activeFile.checkpoints ? 'completed' : 'pending';
+    case STAGES.BOARD:
+      return activeFile.board ? 'completed' : 'pending';
+    default:
+      return 'pending';
+  }
+};
+
+// Helper function to get stage icon
+const getStageIcon = (status) => {
+  switch (status) {
+    case 'completed': return '✅';
+    case 'processing': return '⏳';
+    case 'pending': return '⏸️';
+    default: return '⏸️';
+  }
+};
+
+export default function ComprehensiveShell() {
+  const [stage, setStage] = useState(STAGES.UPLOAD);
+  const [files, setFiles] = useState([]);
+  const [activeFileIndex, setActiveFileIndex] = useState(null);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [currentContext, setCurrentContext] = useState({});
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activityBarVisible, setActivityBarVisible] = useState(true);
+  
+  const { projectSlug, setProjectSlug, setSelectedFile } = useGlobalStore((state) => state);
+  const activeFile = activeFileIndex !== null ? files[activeFileIndex] : null;
+
+  // Update context for chat assistant and quality guard
+  useEffect(() => {
+    setCurrentContext({
+      project: projectSlug,
+      filename: activeFile?.name,
+      stage: stage,
+      themes: activeFile?.graph?.themes || [],
+      atoms: activeFile?.atoms || [],
+      insights: activeFile?.annotated?.insights || [],
+    });
+  }, [activeFile, projectSlug, stage]);
+
+  // Handle file selection
+  const handleFileSelect = (index) => {
+    setActiveFileIndex(index);
+    setSelectedFile(files[index]);
+  };
+
+  // Handle stage navigation
+  const navigateToStage = (newStage) => {
+    setStage(newStage);
+  };
+
+  // Handle file upload and processing
+  const handleFiles = async (selectedFiles) => {
+    try {
+      // Process each file sequentially
+      for (const file of selectedFiles) {
+        setStatusMessage(`Processing ${file.name}...`);
+        
+        // Upload file
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const uploadResponse = await fetchWithProject(`/upload`, {
+          method: 'POST',
+          body: formData,
+        }, projectSlug);
+        
+        // Process through pipeline
+        const pipeline = [
+          { endpoint: '/normalize', key: 'normalized' },
+          { endpoint: '/atomise', key: 'atoms' },
+          { endpoint: '/annotate', key: 'annotated' },
+          { endpoint: '/graph', key: 'graph' },
+          { endpoint: '/themes/initial', key: 'themes' },
+          { endpoint: '/board/create', key: 'board' }
+        ];
+        
+        let currentData = { ...uploadResponse };
+        
+        for (const { endpoint, key } of pipeline) {
+          setStatusMessage(`Processing ${file.name}: ${key}...`);
+          const response = await fetchWithProject(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentData)
+          }, projectSlug);
+          currentData = { ...currentData, [key]: response };
+        }
+        
+        // Update files state
+        setFiles(prevFiles => [...prevFiles, {
+          ...currentData,
+          name: file.name,
+          status: 'completed'
+        }]);
+        
+        setStatusMessage(`Completed processing ${file.name}`);
+      }
+    } catch (error) {
+      console.error('Error processing files:', error);
+      setStatusMessage(`Error: ${error.message}`);
+    }
+  };
+
+  // Render the current stage component
+  const renderStage = () => {
+    switch (stage) {
+      case STAGES.UPLOAD:
+        return <UploadStage onFilesSelected={handleFiles} />;
+      case STAGES.TRANSCRIPT:
+        return <TranscriptStage file={activeFile} />;
+      case STAGES.ATOMS:
+        return <AtomsStage file={activeFile} />;
+      case STAGES.ANNOTATIONS:
+        return <AnnotatedAtomsStage file={activeFile} />;
+      case STAGES.GRAPH:
+        return <GraphStage file={activeFile} />;
+      case STAGES.HUMAN_CHECKPOINTS:
+        return <HumanCheckpointsStage file={activeFile} />;
+      case STAGES.BOARD:
+        return <BoardStage file={activeFile} />;
+      case STAGES.QUALITY_GUARD:
+        return <QualityGuardStage file={activeFile} context={currentContext} />;
+      case STAGES.CHAT_ASSISTANT:
+        return <ChatAssistantStage context={currentContext} />;
+      default:
+        return <div>Select a stage to begin</div>;
+    }
+  };
+
+  return (
+    <div className="app-container">
+      {/* Activity Bar */}
+      <div className="activity-bar">
+        <div className="activity-bar-items">
+          <div 
+            className={`activity-item ${stage === STAGES.UPLOAD ? 'active' : ''}`} 
+            onClick={() => navigateToStage(STAGES.UPLOAD)}
+            title="Upload"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div 
+            className={`activity-item ${stage === STAGES.TRANSCRIPT ? 'active' : ''}`}
+            onClick={() => activeFile && navigateToStage(STAGES.TRANSCRIPT)}
+            title="Transcript"
+            disabled={!activeFile}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div 
+            className={`activity-item ${stage === STAGES.QUALITY_GUARD ? 'active' : ''}`}
+            onClick={() => activeFile && navigateToStage(STAGES.QUALITY_GUARD)}
+            title="Quality Guard"
+            disabled={!activeFile}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm-1.06 13.54L7.4 12l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41-5.64 5.66z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div 
+            className={`activity-item ${stage === STAGES.CHAT_ASSISTANT ? 'active' : ''}`}
+            onClick={() => navigateToStage(STAGES.CHAT_ASSISTANT)}
+            title="Chat Assistant"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z" fill="currentColor"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="main-content">
+        {/* Sidebar */}
+        <div className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          <div className="sidebar-header">
+            <h3>Research Files</h3>
+            <button 
+              className="collapse-btn"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {sidebarCollapsed ? '→' : '←'}
+            </button>
+          </div>
+          <div className="file-list">
+            {files.map((file, index) => (
+              <div 
+                key={index}
+                className={`file-item ${activeFileIndex === index ? 'active' : ''}`}
+                onClick={() => handleFileSelect(index)}
+              >
+                <span className="file-icon">📄</span>
+                {!sidebarCollapsed && (
+                  <>
+                    <span className="file-name">{file.name}</span>
+                    <span className={`status-indicator ${file.status}`} />
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Stage Content */}
+        <div className="stage-container">
+          {/* Stage Navigation */}
+          <div className="stage-navigation">
+            {Object.entries(STAGES).map(([key, value]) => {
+              if (value === STAGES.UPLOAD) return null; // Skip upload from stage nav
+              const status = getStageStatus(value, activeFile);
+              const isActive = stage === value;
+              const isDisabled = status === 'pending' && !isActive;
+              
+              return (
+                <button
+                  key={key}
+                  className={`stage-nav-item ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
+                  onClick={() => !isDisabled && navigateToStage(value)}
+                  disabled={isDisabled}
+                  title={isDisabled ? 'Complete previous stages first' : ''}
+                >
+                  <span className="stage-icon">{getStageIcon(status)}</span>
+                  <span className="stage-name">{key.replace('_', ' ')}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Stage Content */}
+          <div className="stage-content">
+            {renderStage()}
+          </div>
+        </div>
+      </div>
+
+      {/* Status Bar */}
+      <div className="status-bar">
+        <div className="status-message">{statusMessage}</div>
+        <div className="status-actions">
+          <button 
+            className="status-btn"
+            onClick={() => setActivityBarVisible(!activityBarVisible)}
+            aria-label={activityBarVisible ? 'Hide activity bar' : 'Show activity bar'}
+          >
+            {activityBarVisible ? '◀' : '▶'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
