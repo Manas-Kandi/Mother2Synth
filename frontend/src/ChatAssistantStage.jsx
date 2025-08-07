@@ -18,13 +18,6 @@ export default function ChatAssistantStage({ file }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Load conversation history
-  useEffect(() => {
-    if (projectSlug) {
-      loadConversationHistory();
-    }
-  }, [projectSlug, loadConversationHistory]);
-
   const loadConversationHistory = useCallback(async () => {
     if (!projectSlug) return;
 
@@ -56,6 +49,13 @@ export default function ChatAssistantStage({ file }) {
       console.error("Failed to load conversation history:", err);
     }
   }, [projectSlug]);
+
+  // Load conversation history
+  useEffect(() => {
+    if (projectSlug) {
+      loadConversationHistory();
+    }
+  }, [projectSlug, loadConversationHistory]);
 
   async function sendMessage() {
     if (!inputMessage.trim() || !projectSlug) return;
