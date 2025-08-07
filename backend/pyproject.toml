@@ -15,7 +15,8 @@ dependencies = [
     "google-generativeai (>=0.8.5,<0.9.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
     "supabase (>=2.0.0,<3.0.0)",
-    "y-py (>=0.6.0,<1.0.0)"
+    "y-py (>=0.6.0,<1.0.0)",
+    "spacy (>=3.0,<4.0)"
 ]
 
 
