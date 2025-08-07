@@ -22,10 +22,18 @@ class NormalizationResult:
 
 class EnhancedNormalizer:
     """Advanced transcript normalizer with AI-powered enhancements"""
-    
+
     def __init__(self):
-        self.nlp = spacy.load("en_core_web_sm")
         self.setup_logging()
+        try:
+            self.nlp = spacy.load("en_core_web_sm")
+        except OSError as e:
+            self.logger.error(
+                "spaCy model 'en_core_web_sm' not found. Please install it using 'python -m spacy download en_core_web_sm'."
+            )
+            raise RuntimeError(
+                "Missing spaCy model 'en_core_web_sm'. Install it with 'python -m spacy download en_core_web_sm'."
+            ) from e
         
     def setup_logging(self):
         """Setup logging for normalization process"""
