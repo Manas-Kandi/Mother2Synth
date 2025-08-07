@@ -469,7 +469,7 @@ class BoardCreator:
                 'board_data': board_data,
                 'created_at': board_data['created_at'],
                 'updated_at': board_data['updated_at']
-            })
+            }).execute()
         except Exception as e:
             print(f"Error saving to Supabase: {e}")
     
