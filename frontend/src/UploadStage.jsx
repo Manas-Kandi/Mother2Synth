@@ -18,11 +18,12 @@ const TrashIcon = () => (
 
 export default function UploadStage({
   onFiles,
-  statusMessage,
+  onStatusChange,
   onJump,
 }) {
   const [projects, setProjects] = useState({});
   const { projectSlug, setProjectSlug } = useGlobalStore((state) => state);
+  const updateStatus = onStatusChange || (() => {});
   const isUploadDisabled = !projectSlug || projectSlug.trim() === '';
 
   useEffect(() => {
@@ -49,10 +50,10 @@ export default function UploadStage({
     
     if (!projectSlug) {
       console.warn('Cannot upload: No project slug provided');
-      setStatusMessage('Please enter a project slug first');
+      updateStatus('Please enter a project slug first');
       return;
     }
-    
+
     try {
       console.log('Calling onFiles with:', { files, projectSlug });
       onFiles(files, projectSlug);
@@ -60,7 +61,7 @@ export default function UploadStage({
       e.target.value = '';
     } catch (error) {
       console.error('Error processing files:', error);
-      setStatusMessage(`Error: ${error.message}`);
+      updateStatus(`Error: ${error.message}`);
     }
   };
 
@@ -93,7 +94,7 @@ export default function UploadStage({
     
     if (isUploadDisabled) {
       console.warn('Upload is disabled - missing project slug');
-      setStatusMessage('Please enter a project slug first');
+      updateStatus('Please enter a project slug first');
       return;
     }
     
@@ -102,16 +103,16 @@ export default function UploadStage({
     
     if (!files.length) {
       console.warn('No PDF files found in drop');
-      setStatusMessage('Please drop PDF files only');
+      updateStatus('Please drop PDF files only');
       return;
     }
-    
+
     try {
       console.log('Calling onFiles with:', { files, projectSlug });
       onFiles(files, projectSlug);
     } catch (error) {
       console.error('Error processing dropped files:', error);
-      setStatusMessage(`Error: ${error.message}`);
+      updateStatus(`Error: ${error.message}`);
     }
   };
 
@@ -172,12 +173,12 @@ export default function UploadStage({
           type="text"
           value={projectSlug}
           onChange={(e) => {
-          const sanitized = e.target.value
-            .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^a-z0-9-]/g, '');
-          setProjectSlug(sanitized);
-        }}
+            const sanitized = e.target.value
+              .toLowerCase()
+              .replace(/\s+/g, '-')
+              .replace(/[^a-z0-9-]/g, '');
+            setProjectSlug(sanitized);
+          }}
           placeholder="Enter project slug"
           className="slug-input"
           aria-label="Project slug"
@@ -217,13 +218,6 @@ export default function UploadStage({
             </div>
           </label>
         </div>
-
-
-        {statusMessage && (
-          <p className="status-message">
-            <span className="dot"></span> {statusMessage}
-          </p>
-        )}
       </section>
     </main>
   );
