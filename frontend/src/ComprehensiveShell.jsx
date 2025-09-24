@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useGlobalStore } from "./store";
 import { fetchWithProject } from "./api";
 import "./ComprehensiveShell.css";
 
-// Import all stage components
 import UploadStage from "./UploadStage";
 import TranscriptStage from "./TranscriptStage";
 import AtomsStage from "./AtomsStage";
@@ -14,7 +13,6 @@ import ChatAssistantStage from "./ChatAssistantStage";
 import BoardStage from "./BoardStage";
 import HumanCheckpointsStage from "./HumanCheckpointsStage";
 
-// Navigation stages
 const STAGES = {
   UPLOAD: -1,
   TRANSCRIPT: 0,
@@ -24,7 +22,25 @@ const STAGES = {
   HUMAN_CHECKPOINTS: 4,
   BOARD: 5,
   QUALITY_GUARD: 6,
-  CHAT_ASSISTANT: 7
+  CHAT_ASSISTANT: 7,
+};
+
+const STAGE_DETAILS = [
+  { key: STAGES.UPLOAD, label: "Upload", description: "Add transcripts and project files" },
+  { key: STAGES.TRANSCRIPT, label: "Transcript", description: "Review the cleaned transcript" },
+  { key: STAGES.ATOMS, label: "Atoms", description: "Inspect extracted atomic insights" },
+  { key: STAGES.ANNOTATIONS, label: "Annotations", description: "Enrich atoms with metadata" },
+  { key: STAGES.GRAPH, label: "Graph", description: "Explore generated themes and links" },
+  { key: STAGES.HUMAN_CHECKPOINTS, label: "Checkpoints", description: "Address human QA prompts" },
+  { key: STAGES.BOARD, label: "Board", description: "Review the collaborative research board" },
+  { key: STAGES.QUALITY_GUARD, label: "Quality", description: "Validate research quality" },
+  { key: STAGES.CHAT_ASSISTANT, label: "Assistant", description: "Ask questions about the project" },
+];
+
+const STATUS_LABELS = {
+  completed: "Done",
+  active: "In progress",
+  pending: "Pending",
 };
 
 export default function ComprehensiveShell() {
@@ -33,26 +49,25 @@ export default function ComprehensiveShell() {
   const [activeFileIndex, setActiveFileIndex] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
   const [currentContext, setCurrentContext] = useState({});
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activityBarVisible, setActivityBarVisible] = useState(true);
-  
+
   const { projectSlug, setProjectSlug, setSelectedFile } = useGlobalStore((state) => state);
 
-  // Context for chat assistant and quality guard
+  const activeFile = activeFileIndex !== null ? files[activeFileIndex] : null;
+
   const updateContext = useCallback(() => {
-    const activeFile = activeFileIndex !== null ? files[activeFileIndex] : null;
+    const file = activeFile;
     setCurrentContext({
       project: projectSlug,
-      filename: activeFile?.name,
-      stage: stage,
-      themes: activeFile?.graph?.themes || [],
-      atoms: activeFile?.atoms || [],
-      insights: activeFile?.annotated?.insights || [],
-      quality: activeFile?.quality || [],
-      board: activeFile?.board,
-      file: activeFile
+      filename: file?.name,
+      stage,
+      themes: file?.graph?.themes || [],
+      atoms: file?.atoms || [],
+      insights: file?.annotated?.insights || [],
+      quality: file?.quality || [],
+      board: file?.board,
+      file,
     });
-  }, [files, activeFileIndex, stage, projectSlug]);
+  }, [activeFile, projectSlug, stage]);
 
   useEffect(() => {
     updateContext();
@@ -60,13 +75,11 @@ export default function ComprehensiveShell() {
 
   const handleFiles = async (selectedFiles, slug) => {
     if (!selectedFiles || !selectedFiles.length) {
-      console.error('No files selected');
       setStatusMessage("No files selected.");
       return;
     }
 
     if (!slug) {
-      console.error('No project slug provided');
       setStatusMessage("Project slug is required.");
       return;
     }
@@ -79,7 +92,6 @@ export default function ComprehensiveShell() {
       if (res.ok) {
         const projects = await res.json();
         if (!projects[slug]) {
-          console.log(`Project '${slug}' not found, will attempt to create during upload`);
           setStatusMessage(`Creating new project '${slug}'...`);
         }
       }
@@ -87,7 +99,7 @@ export default function ComprehensiveShell() {
       console.warn("Project validation warning:", err);
     }
 
-    const updatedFiles = [];
+    const processedFiles = [];
     let encounteredError = false;
 
     for (let i = 0; i < selectedFiles.length; i++) {
@@ -95,17 +107,18 @@ export default function ComprehensiveShell() {
       const filename = file.name;
 
       try {
-        console.log(`Processing file ${i + 1}/${selectedFiles.length}: ${filename}`);
-
-        // Step 1: Upload file
-        setStatusMessage(`Uploading: ${filename} (${i + 1}/${selectedFiles.length})`);
+        setStatusMessage(`Uploading ${filename} (${i + 1}/${selectedFiles.length})`);
         const form = new FormData();
         form.append("files", file);
 
-        const uploadRes = await fetchWithProject("/upload", {
-          method: "POST",
-          body: form,
-        }, slug);
+        const uploadRes = await fetchWithProject(
+          "/upload",
+          {
+            method: "POST",
+            body: form,
+          },
+          slug
+        );
 
         if (!uploadRes.ok) {
           throw new Error(`Upload failed: ${uploadRes.status}`);
@@ -113,11 +126,12 @@ export default function ComprehensiveShell() {
 
         await uploadRes.json();
 
-        // Step 2: Normalize
-        setStatusMessage(`Normalizing: ${filename} (${i + 1}/${selectedFiles.length})`);
-        const normalizeRes = await fetchWithProject(`/normalize?filename=${encodeURIComponent(filename)}`, {
-          method: "POST"
-        }, slug);
+        setStatusMessage(`Normalizing ${filename}`);
+        const normalizeRes = await fetchWithProject(
+          `/normalize?filename=${encodeURIComponent(filename)}`,
+          { method: "POST" },
+          slug
+        );
 
         if (!normalizeRes.ok) {
           throw new Error(`Normalization failed: ${normalizeRes.status}`);
@@ -126,11 +140,12 @@ export default function ComprehensiveShell() {
         const normData = await normalizeRes.json();
         const cleaned = normData.content;
 
-        // Step 3: Atomize
-        setStatusMessage(`Processing: ${filename} (${i + 1}/${selectedFiles.length})`);
-        const atomiseRes = await fetchWithProject(`/atomise?filename=${encodeURIComponent(filename)}`, {
-          method: "POST"
-        }, slug);
+        setStatusMessage(`Atomizing ${filename}`);
+        const atomiseRes = await fetchWithProject(
+          `/atomise?filename=${encodeURIComponent(filename)}`,
+          { method: "POST" },
+          slug
+        );
 
         if (!atomiseRes.ok) {
           throw new Error(`Atomization failed: ${atomiseRes.status}`);
@@ -138,13 +153,16 @@ export default function ComprehensiveShell() {
 
         const { atoms } = await atomiseRes.json();
 
-        // Step 4: Annotate
-        setStatusMessage(`Analyzing: ${filename} (${i + 1}/${selectedFiles.length})`);
-        const annotateRes = await fetchWithProject(`/annotate?filename=${encodeURIComponent(filename)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(atoms),
-        }, slug);
+        setStatusMessage(`Annotating ${filename}`);
+        const annotateRes = await fetchWithProject(
+          `/annotate?filename=${encodeURIComponent(filename)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(atoms),
+          },
+          slug
+        );
 
         if (!annotateRes.ok) {
           throw new Error(`Annotation failed: ${annotateRes.status}`);
@@ -152,13 +170,16 @@ export default function ComprehensiveShell() {
 
         const annotated = await annotateRes.json();
 
-        // Step 5: Build graph
-        setStatusMessage(`Building insights: ${filename} (${i + 1}/${selectedFiles.length})`);
-        const graphRes = await fetchWithProject(`/graph?filename=${encodeURIComponent(filename)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(annotated),
-        }, slug);
+        setStatusMessage(`Building graph for ${filename}`);
+        const graphRes = await fetchWithProject(
+          `/graph?filename=${encodeURIComponent(filename)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(annotated),
+          },
+          slug
+        );
 
         if (!graphRes.ok) {
           throw new Error(`Graph build failed: ${graphRes.status}`);
@@ -166,13 +187,16 @@ export default function ComprehensiveShell() {
 
         const graph = await graphRes.json();
 
-        // Step 6: Generate initial themes
-        setStatusMessage(`Generating themes: ${filename} (${i + 1}/${selectedFiles.length})`);
-        const themesRes = await fetchWithProject(`/themes/initial?filename=${encodeURIComponent(filename)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(annotated),
-        }, slug);
+        setStatusMessage(`Generating themes for ${filename}`);
+        const themesRes = await fetchWithProject(
+          `/themes/initial?filename=${encodeURIComponent(filename)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(annotated),
+          },
+          slug
+        );
 
         if (!themesRes.ok) {
           throw new Error(`Initial themes fetch failed: ${themesRes.status}`);
@@ -181,18 +205,21 @@ export default function ComprehensiveShell() {
         const initialThemes = await themesRes.json();
         graph.themes = [...(graph.themes || []), ...initialThemes];
 
-        // Step 7: Create board
-        setStatusMessage(`Finalizing: ${filename} (${i + 1}/${selectedFiles.length})`);
-        const boardRes = await fetchWithProject("/board/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            atoms: annotated,
-            themes: graph.themes,
-            project_slug: slug,
-            filename
-          }),
-        }, slug);
+        setStatusMessage(`Creating board for ${filename}`);
+        const boardRes = await fetchWithProject(
+          "/board/create",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              atoms: annotated,
+              themes: graph.themes,
+              project_slug: slug,
+              filename,
+            }),
+          },
+          slug
+        );
 
         if (!boardRes.ok) {
           throw new Error(`Board creation failed: ${boardRes.status}`);
@@ -201,7 +228,7 @@ export default function ComprehensiveShell() {
         const boardResponse = await boardRes.json();
         const board = { ...boardResponse.board, board_url: boardResponse.board_url };
 
-        const fileData = {
+        processedFiles.push({
           id: `${filename}-${new Date().toISOString()}`,
           name: filename,
           cleaned,
@@ -210,28 +237,27 @@ export default function ComprehensiveShell() {
           graph,
           board,
           project_slug: slug,
-          status: 'complete',
-          processedAt: new Date().toISOString()
-        };
-
-        updatedFiles.push(fileData);
+          status: "complete",
+          processedAt: new Date().toISOString(),
+        });
       } catch (error) {
         console.error(`Error processing ${filename}:`, error);
         encounteredError = true;
         setStatusMessage(`Error processing ${filename}: ${error.message}`);
-        updatedFiles.push({
+        processedFiles.push({
           id: `${filename}-${new Date().toISOString()}`,
           name: filename,
-          status: 'error',
-          error: error.message
+          status: "error",
+          error: error.message,
         });
       }
     }
 
-    const newFiles = [...files, ...updatedFiles];
+    const newFiles = [...files, ...processedFiles];
     setFiles(newFiles);
+
     if (!encounteredError && newFiles.length > 0) {
-      const firstNewFileIndex = newFiles.length - updatedFiles.length;
+      const firstNewFileIndex = newFiles.length - processedFiles.length;
       setActiveFileIndex(firstNewFileIndex);
       setSelectedFile(newFiles[firstNewFileIndex]?.name || null);
       setStage(STAGES.TRANSCRIPT);
@@ -239,308 +265,224 @@ export default function ComprehensiveShell() {
     }
   };
 
-  const getStageStatus = (stageKey) => {
-    const activeFile = activeFileIndex !== null ? files[activeFileIndex] : null;
-    if (!activeFile) return 'pending';
-
-    const stageMap = {
-      [STAGES.UPLOAD]: 'complete',
-      [STAGES.TRANSCRIPT]: activeFile.cleaned ? 'complete' : 'pending',
-      [STAGES.ATOMS]: activeFile.atoms ? 'complete' : 'pending',
-      [STAGES.ANNOTATIONS]: activeFile.annotated ? 'complete' : 'pending',
-      [STAGES.GRAPH]: activeFile.graph ? 'complete' : 'pending',
-      [STAGES.BOARD]: activeFile.board ? 'complete' : 'pending',
-      [STAGES.QUALITY]: 'pending',
-      [STAGES.CHAT]: 'pending',
-    };
-
-    return stageMap[stageKey] || 'pending';
-  };
-
-  const getStageIcon = (status) => {
-    switch (status) {
-      case 'complete':
-        return '✓';
-      case 'pending':
-        return '○';
-      case 'active':
-        return '●';
-      default:
-        return '○';
-    }
-  };
-
-  function getActiveFile() {
-    return activeFileIndex !== null ? files[activeFileIndex] : null;
-  }
-
-  function handleFileSelect(index) {
+  const handleFileSelect = (index) => {
     setActiveFileIndex(index);
     setSelectedFile(files[index]?.name || null);
+  };
 
-  return board;
-}
-  setSelectedFile(files[index]?.name || null);
-}
+  const stageCompletion = useMemo(() => ({
+    [STAGES.UPLOAD]: files.length > 0,
+    [STAGES.TRANSCRIPT]: Boolean(activeFile?.cleaned),
+    [STAGES.ATOMS]: Boolean(activeFile?.atoms && activeFile.atoms.length),
+    [STAGES.ANNOTATIONS]: Boolean(activeFile?.annotated),
+    [STAGES.GRAPH]: Boolean(activeFile?.graph),
+    [STAGES.HUMAN_CHECKPOINTS]: Boolean(activeFile),
+    [STAGES.BOARD]: Boolean(activeFile?.board),
+    [STAGES.QUALITY_GUARD]: Boolean(activeFile?.quality),
+    [STAGES.CHAT_ASSISTANT]: Boolean(activeFile),
+  }), [files.length, activeFile]);
 
-const getStageStatus = (stageKey) => {
-  const activeFile = getActiveFile();
-  if (!activeFile) return 'pending';
+  const getStageStatus = useCallback((stageKey) => {
+    if (stage === stageKey) return "active";
+    if (stageCompletion[stageKey]) return "completed";
+    return "pending";
+  }, [stage, stageCompletion]);
 
-  switch (stageKey) {
-    case STAGES.TRANSCRIPT:
-      return activeFile.cleaned ? 'completed' : 'pending';
-    case STAGES.ATOMS:
-      return activeFile.atoms ? 'completed' : 'pending';
-    case STAGES.ANNOTATIONS:
-      return activeFile.annotated ? 'completed' : 'pending';
-    case STAGES.GRAPH:
-      return activeFile.graph ? 'completed' : 'pending';
-    case STAGES.BOARD:
-      return activeFile.board ? 'completed' : 'pending';
-    default:
-      return 'pending';
-  }
-};
+  const canNavigateToStage = useCallback((stageKey) => {
+    if (stageKey === STAGES.UPLOAD) return true;
+    return Boolean(activeFile);
+  }, [activeFile]);
 
-const getStageIcon = (status) => {
-  switch (status) {
-    case 'completed': return '✅';
-    case 'processing': return '⏳';
-    case 'pending': return '⏸️';
-    default: return '⏸️';
-  }
-};
+  const stageTimeline = useMemo(
+    () => STAGE_DETAILS.map((detail) => {
+      const status = getStageStatus(detail.key);
+      const disabled = !canNavigateToStage(detail.key) && stage !== detail.key;
+      return {
+        ...detail,
+        status,
+        disabled,
+        isActive: stage === detail.key,
+      };
+    }),
+    [getStageStatus, stage, canNavigateToStage]
+  );
 
-// Main component is already defined at the top of the file
-// This file contains the ComprehensiveShell component and its helper functions
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.588.588 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.26 1.17-.59 1.69-.98l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66z" fill="currentColor"/>
-          </svg>
-        </div>
-        <div className="activity-item" title="Chat Assistant">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill="currentColor"/>
-          </svg>
-        </div>
-      </div>
-    </div>
+  const stageLabel = useMemo(
+    () => STAGE_DETAILS.find((detail) => detail.key === stage)?.label || "Workspace",
+    [stage]
+  );
 
-    {/* Sidebar */}
-    <div className="sidebar">
-      <div className="sidebar-header">
-        <div className="sidebar-title">
-          <h2>Explorer</h2>
-          <span className="project-badge">{projectSlug || 'No Project'}</span>
-        </div>
-      </div>
-
-      {/* Project Section */}
-      <div className="sidebar-section">
-        <div className="section-header">
-          <h3>Project</h3>
-          <button className="section-action" title="New Project">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
-            </svg>
-          </button>
-        </div>
-        <div className="project-input">
-          <input
-            type="text"
-            placeholder="Project name..."
-            value={projectSlug}
-            onChange={(e) => setProjectSlug(e.target.value)}
-            className="project-input-field"
-          />
-        </div>
-      </div>
-
-      {/* Files Section */}
-      <div className="sidebar-section">
-        <div className="section-header">
-          <h3>Files</h3>
-          <button className="section-action" title="Upload Files">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" fill="currentColor"/>
-            </svg>
-          </button>
-        </div>
-        <div className="file-tree">
-          {files.map((file, index) => (
-            <div
-              key={index}
-              className={`file-item ${index === activeFileIndex ? 'active' : ''}`}
-              onClick={() => handleFileSelect(index)}
-            >
-              <div className="file-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z" fill="currentColor"/>
-                </svg>
-              </div>
-              <span className="file-name">{file.name}</span>
-              <div className={`status-indicator ${getStageStatus(stage)}`}></div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Pipeline Section */}
-      <div className="sidebar-section">
-        <div className="section-header">
-          <h3>Pipeline</h3>
-        </div>
-        <div className="pipeline-timeline">
-          {Object.entries({
-            [STAGES.UPLOAD]: "Upload",
-            [STAGES.TRANSCRIPT]: "Transcript",
-            [STAGES.ATOMS]: "Atomize",
-            [STAGES.ANNOTATIONS]: "Annotate",
-            [STAGES.GRAPH]: "Analyze",
-            [STAGES.HUMAN_CHECKPOINTS]: "Review",
-            [STAGES.BOARD]: "Visualize",
-            [STAGES.QUALITY_GUARD]: "Validate",
-            [STAGES.CHAT_ASSISTANT]: "Assist"
-          }).map(([key, label]) => {
-            const stageKey = parseInt(key);
-            const status = getStageStatus(stageKey);
-            
-            return (
-              <div
-                key={stageKey}
-                className={`pipeline-item ${stage === stageKey ? 'active' : ''} ${status}`}
-                onClick={() => canNavigateToStage(stageKey) && setStage(stageKey)}
-              >
-                <div className="pipeline-indicator">
-                  <div className={`status-dot ${status}`}></div>
-                  <div className="pipeline-line"></div>
-                </div>
-                <div className="pipeline-content">
-                  <span className="pipeline-name">{label}</span>
-                  <span className="pipeline-status">{status}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-
-    {/* Main Content Area */}
-    <div className="main-content">
-      {/* Header */}
-      <div className="header">
-        <div className="header-left">
-          <div className="breadcrumb">
-            <span className="breadcrumb-item">{projectSlug || 'Untitled'}</span>
-            <span className="breadcrumb-separator">›</span>
-            <span className="breadcrumb-item">
-              {{
-                [STAGES.UPLOAD]: "Upload",
-                [STAGES.TRANSCRIPT]: "Transcript",
-                [STAGES.ATOMS]: "Atomize",
-                [STAGES.ANNOTATIONS]: "Annotate",
-                [STAGES.GRAPH]: "Analyze",
-                [STAGES.HUMAN_CHECKPOINTS]: "Review",
-                [STAGES.BOARD]: "Visualize",
-                [STAGES.QUALITY_GUARD]: "Validate",
-                [STAGES.CHAT_ASSISTANT]: "Assist"
-              }[stage] || "Unknown"}
-            </span>
+  return (
+    <div className="comprehensive-shell">
+      <aside className="shell-sidebar">
+        <div className="sidebar-scroll">
+          <div className="sidebar-header">
+            <h2 className="sidebar-title">Mother2 Synth</h2>
+            <span className="sidebar-subtitle">Project pipeline</span>
           </div>
+
+          <section className="sidebar-section">
+            <div className="section-label">Project</div>
+            <input
+              type="text"
+              className="project-input"
+              placeholder="Enter a project slug"
+              value={projectSlug || ""}
+              onChange={(e) => setProjectSlug(e.target.value)}
+            />
+            <p className="section-help">
+              Choose a short identifier to group uploads and analysis outputs.
+            </p>
+          </section>
+
+          <section className="sidebar-section">
+            <div className="section-heading">
+              <span className="section-label">Files</span>
+              <span className="section-count">{files.length}</span>
+            </div>
+            <div className="file-list">
+              {files.length === 0 ? (
+                <div className="empty-block">No files processed yet.</div>
+              ) : (
+                files.map((file, index) => {
+                  const isActive = index === activeFileIndex;
+                  const hasError = file.status === "error";
+                  return (
+                    <button
+                      key={file.id || file.name || index}
+                      type="button"
+                      className={`file-card ${isActive ? "active" : ""} ${hasError ? "error" : ""}`}
+                      onClick={() => handleFileSelect(index)}
+                    >
+                      <div className="file-card-top">
+                        <span className="file-name" title={file.name}>{file.name}</span>
+                        <span className={`file-status ${file.status || "complete"}`}>
+                          {file.status === "error" ? "Error" : "Ready"}
+                        </span>
+                      </div>
+                      <div className="file-meta">
+                        <span>{file.processedAt ? new Date(file.processedAt).toLocaleString() : "Pending"}</span>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
+          <section className="sidebar-section">
+            <div className="section-heading">
+              <span className="section-label">Pipeline</span>
+            </div>
+            <div className="pipeline-list">
+              {stageTimeline.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`pipeline-step ${item.status} ${item.isActive ? "active" : ""}`}
+                  onClick={() => !item.disabled && setStage(item.key)}
+                  disabled={item.disabled}
+                >
+                  <span className="step-marker" aria-hidden="true"></span>
+                  <div className="step-text">
+                    <span className="step-title">{item.label}</span>
+                    <span className="step-description">{item.description}</span>
+                  </div>
+                  <span className={`step-status ${item.status}`}>{STATUS_LABELS[item.status]}</span>
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
-        <div className="header-right">
+      </aside>
+
+      <div className="shell-main">
+        <header className="shell-header">
+          <div className="header-titles">
+            <h1 className="header-title">{stageLabel}</h1>
+            <div className="header-meta">
+              <span>{projectSlug || "No project selected"}</span>
+              {activeFile && <span>• {activeFile.name}</span>}
+            </div>
+          </div>
           {statusMessage && (
-            <div className="status-indicator">
-              <div className="status-spinner"></div>
-              <span className="status-text">{statusMessage}</span>
+            <div className="header-status">
+              <span className="status-pill" title={statusMessage}>{statusMessage}</span>
             </div>
           )}
-          <div className="header-actions">
-            <button className="header-btn" title="Settings">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65A.588.588 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49 1.01c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.26 1.17-.59 1.69-.98l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66z" fill="currentColor"/>
-              </svg>
-            </button>
+        </header>
+
+        <main className="shell-content">
+          <div className="stage-surface">
+            {stage === STAGES.UPLOAD && (
+              <UploadStage
+                onFiles={handleFiles}
+                onStatusChange={setStatusMessage}
+              />
+            )}
+            {stage === STAGES.TRANSCRIPT && (
+              <TranscriptStage
+                file={activeFile}
+                onStatusChange={setStatusMessage}
+              />
+            )}
+            {stage === STAGES.ATOMS && (
+              <AtomsStage
+                file={activeFile}
+                onStatusChange={setStatusMessage}
+              />
+            )}
+            {stage === STAGES.ANNOTATIONS && (
+              <AnnotatedAtomsStage
+                file={activeFile}
+                onStatusChange={setStatusMessage}
+              />
+            )}
+            {stage === STAGES.GRAPH && (
+              <GraphStage
+                file={activeFile}
+                onStatusChange={setStatusMessage}
+              />
+            )}
+            {stage === STAGES.HUMAN_CHECKPOINTS && (
+              <HumanCheckpointsStage
+                file={activeFile}
+                onStatusChange={setStatusMessage}
+              />
+            )}
+            {stage === STAGES.BOARD && (
+              <BoardStage
+                file={activeFile}
+                onStatusChange={setStatusMessage}
+              />
+            )}
+            {stage === STAGES.QUALITY_GUARD && (
+              <QualityGuardStage
+                file={activeFile}
+                onStatusChange={setStatusMessage}
+              />
+            )}
+            {stage === STAGES.CHAT_ASSISTANT && (
+              <ChatAssistantStage
+                file={activeFile}
+                context={currentContext}
+                onStatusChange={setStatusMessage}
+              />
+            )}
           </div>
-        </div>
-      </div>
+        </main>
 
-      {/* Content */}
-      <div className="content-area">
-        <div className="content-wrapper">
-          {stage === STAGES.UPLOAD && (
-            <UploadStage
-              onFiles={handleFiles}
-              projectSlug={projectSlug}
-              onStatusChange={setStatusMessage}
-            />
-          )}
-          {stage === STAGES.TRANSCRIPT && (
-            <TranscriptStage
-              file={files[activeFileIndex]}
-              onStatusChange={setStatusMessage}
-            />
-          )}
-          {stage === STAGES.ATOMS && (
-            <AtomsStage
-              file={files[activeFileIndex]}
-              onStatusChange={setStatusMessage}
-            />
-          )}
-          {stage === STAGES.ANNOTATIONS && (
-            <AnnotatedAtomsStage
-              file={files[activeFileIndex]}
-              onStatusChange={setStatusMessage}
-            />
-          )}
-          {stage === STAGES.GRAPH && (
-            <GraphStage
-              file={files[activeFileIndex]}
-              onStatusChange={setStatusMessage}
-            />
-          )}
-          {stage === STAGES.HUMAN_CHECKPOINTS && (
-            <HumanCheckpointsStage
-              file={files[activeFileIndex]}
-              onStatusChange={setStatusMessage}
-            />
-          )}
-          {stage === STAGES.BOARD && (
-            <BoardStage
-              file={files[activeFileIndex]}
-              onStatusChange={setStatusMessage}
-            />
-          )}
-          {stage === STAGES.QUALITY_GUARD && (
-            <QualityGuardStage
-              file={files[activeFileIndex]}
-              onStatusChange={setStatusMessage}
-            />
-          )}
-          {stage === STAGES.CHAT_ASSISTANT && (
-            <ChatAssistantStage
-              file={files[activeFileIndex]}
-              context={currentContext}
-              onStatusChange={setStatusMessage}
-            />
-          )}
-        </div>
+        <footer className="shell-footer">
+          <div className="footer-left">
+            <span className="footer-dot" aria-hidden="true"></span>
+            <span>{statusMessage || "Standing by for your next action"}</span>
+          </div>
+          <div className="footer-right">
+            <span>{files.length} file{files.length === 1 ? "" : "s"}</span>
+            <span>Stage: {stageLabel}</span>
+          </div>
+        </footer>
       </div>
     </div>
-
-    {/* Status Bar */}
-    <div className="status-bar">
-      <div className="status-left">
-        <span className="status-item">
-          <span className="status-icon">⚡</span>
-          <span>Ready</span>
-        </span>
-      </div>
-      <div className="status-right">
-        <span className="status-item">{files.length} files</span>
-        <span className="status-item">{stage >= STAGES.ATOMS ? 'Processing' : 'Idle'}</span>
-      </div>
-    </div>
-  </div>
-);
+  );
+}
